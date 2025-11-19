@@ -15,10 +15,18 @@
     font-size:18px;
   }
 
-  #equation{
-    font-size:1.7em;
-    margin:0 auto 12px;
+  #topBar{
+    max-width:1100px;
+    margin:0 auto 4px;
+    display:flex;
+    justify-content:flex-end;
+    align-items:center;
+  }
+
+  #counterBox{
+    font-size:1em;
     font-weight:bold;
+    color:#333;
   }
 
   #stepsBox{
@@ -30,8 +38,12 @@
     text-align:left;
   }
 
+  .eqRow{
+    margin-bottom:10px;
+  }
+
   .stepRow{
-    margin:12px 0 18px;
+    margin:12px 0 16px;
   }
 
   .stepTitle{
@@ -45,6 +57,14 @@
     display:flex;
     align-items:center;
     gap:8px;
+  }
+
+  .eqTextLeft,
+  .eqTextRight{
+    flex:1;
+    padding:4px 10px;
+    font-size:1.2em;
+    font-weight:bold;
   }
 
   .stepInputLeft,
@@ -101,19 +121,23 @@
   .ok{color:#2e7d32;}
   .err{color:#c62828;}
 
+  #bottomBar{
+    max-width:1100px;
+    margin:10px auto 0;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+
   #solutionBox{
     display:none;
-    margin-top:12px;
     font-size:1.4em;
     font-weight:bold;
     color:#007bff;
     text-align:left;
-    margin-left:10px;
   }
 
   #newEqBtn{
-    display:block;
-    margin:20px auto 0;
     padding:10px 22px;
     font-size:1.2em;
     border:none;
@@ -126,22 +150,20 @@
   #newEqBtn:hover{
     background:#0056b3;
   }
-
 </style>
 </head>
 <body>
 
-<!-- Aufgabe -->
-<div id="equation"></div>
+<div id="topBar">
+  <div id="counterBox">Gelöst: 0</div>
+</div>
 
-<!-- Schritte -->
 <div id="stepsBox"></div>
 
-<!-- Lösungsmenge -->
-<div id="solutionBox"></div>
-
-<!-- Button -->
-<button id="newEqBtn">Neue Gleichung</button>
+<div id="bottomBar">
+  <div id="solutionBox"></div>
+  <button id="newEqBtn">Neue Gleichung</button>
+</div>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
@@ -185,6 +207,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function equivalent(eq1,eq2){
     const c1=canonEq(eq1);
     const c2=canonEq(eq2);
+    // gleiche Lösungsmenge -> proportionale Koeffizienten
     return (c1.ax * c2.b === c2.ax * c1.b);
   }
 
@@ -202,7 +225,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let parts=[], rest=k, count=2+Math.floor(Math.random()*2);
     for(let i=0;i<count-1;i++){
       const r=Math.max(1,Math.floor(Math.abs(rest)));
-      const v=randInt(-r,r); parts.push(v); rest-=v;
+      const v=randInt(-r,r);
+      parts.push(v); rest-=v;
     }
     parts.push(rest);
     return parts.filter(x=>x!==0);
@@ -223,9 +247,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const piece = (t.kind==="x" ? (abs===1?"x":abs+"x") : abs);
 
       if(first){
-        out += (sign==="+" ? piece : "-"+piece);
+        out += (sign==="+"?piece:"-"+piece);
         first=false;
-      } else {
+      }else{
         out += " "+sign+" "+piece;
       }
     }
@@ -260,8 +284,8 @@ document.addEventListener("DOMContentLoaded", () => {
   /* ---------- UI ---------- */
 
   const stepsBox = document.getElementById("stepsBox");
-  const equationEl = document.getElementById("equation");
   const solutionBox = document.getElementById("solutionBox");
+  const counterBox = document.getElementById("counterBox");
 
   const stepNames = [
     "Gleichartige Glieder ordnen",
@@ -272,12 +296,29 @@ document.addEventListener("DOMContentLoaded", () => {
   ];
 
   let originalEq = "";
+  let origLeft = "";
+  let origRight = "";
   let trueSolution = null;
+  let solvedCount = 0;
+  let solvedCurrent = false;
 
   function renderSteps(){
     stepsBox.innerHTML = "";
     solutionBox.style.display = "none";
 
+    // Aufgabenzeile mit ausgerichtetem "="
+    const eqRow = document.createElement("div");
+    eqRow.className = "eqRow";
+    eqRow.innerHTML = `
+      <div class="stepLine">
+        <span class="eqTextLeft">${origLeft}</span>
+        <span class="eqSign">=</span>
+        <span class="eqTextRight">${origRight}</span>
+      </div>
+    `;
+    stepsBox.appendChild(eqRow);
+
+    // Schritte
     stepNames.forEach((name,i)=>{
       const hasForm = (i>=1 && i<=3);
 
@@ -297,18 +338,13 @@ document.addEventListener("DOMContentLoaded", () => {
           ${hasForm ? `
             <span class="eqFormLabel">|</span>
             <input type="text" class="eqFormInput" id="F${i}">
-            <button class="checkFormBtn" data-step="${i}">Umformung</button>
+            <button class="checkFormBtn" data-step="${i}">Prüfen</button>
           ` : ""}
         </div>
 
         <div class="fb" id="fbEq${i}"></div>
-
-        ${hasForm ? `
-        <div style="margin-left:auto; max-width:300px;">
-            <div class="fb" id="fbForm${i}"></div>
-        </div>` : ""}
+        ${hasForm ? `<div class="fb" id="fbForm${i}"></div>` : ""}
       `;
-
       stepsBox.appendChild(row);
     });
   }
@@ -332,10 +368,16 @@ document.addEventListener("DOMContentLoaded", () => {
       fb.textContent="✔ äquivalent zur Ausgangsgleichung.";
       fb.className="fb ok";
 
-      // Wenn Schritt 5 korrekt → Lösungsmenge zeigen
-      if(step === 4){
-        solutionBox.style.display = "block";
-        solutionBox.textContent = `L = { ${trueSolution} }`;
+      // Wenn letzte Zeile und noch nicht gezählt → Lösungsmenge + Zähler
+      if(step === 4 && !solvedCurrent){
+        solvedCurrent = true;
+        solvedCount += 1;
+        counterBox.textContent = "Gelöst: " + solvedCount;
+
+        if(trueSolution !== null){
+          solutionBox.style.display = "block";
+          solutionBox.textContent = `L = { ${trueSolution} }`;
+        }
       }
 
     } else {
@@ -355,8 +397,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if(!"+-*/:".includes(type)) return null;
 
-    let hasX = false;
+    let hasX=false;
 
+    // Schritt 2 (Index 1): x-Glied entfernen
     if(stepIndex===1){
       if(!valStr.includes("x")) return null;
       hasX=true;
@@ -364,11 +407,12 @@ document.addEventListener("DOMContentLoaded", () => {
       if(valStr==="") valStr="1";
       if(valStr==="+" || valStr==="-") valStr+="1";
     }else{
+      // Kein x erlaubt bei Schritt 3 und 4
       if(valStr.includes("x")) return null;
     }
 
     const val=parseFloat(valStr);
-    if(isNaN(val)||val===0) return null;
+    if(isNaN(val) || val===0) return null;
 
     return {type,val,hasX};
   }
@@ -377,13 +421,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const [Lstr,Rstr] = eqStr.split("=");
     const L=parseSide(Lstr), R=parseSide(Rstr);
 
+    // Schritt 2 (Index 1): x-Glieder auf eine Seite bringen
     if(stepIndex===1){
-      if(L.cx===0||R.cx===0) return null;
+      if(L.cx===0 || R.cx===0) return null;
       const absL=Math.abs(L.cx), absR=Math.abs(R.cx);
       const del = (absL<=absR ? -L.cx : -R.cx);
+      if(del===0) return null;
       return {type:(del>0?"+":"-"), val:Math.abs(del), hasX:true};
     }
 
+    // Schritt 3 (Index 2): Zahlen auf die andere Seite
     if(stepIndex===2){
       const side = (L.cx!==0 ? L : (R.cx!==0 ? R : null));
       if(!side || side.c0===0) return null;
@@ -391,6 +438,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return {type:(del>0?"+":"-"), val:Math.abs(del), hasX:false};
     }
 
+    // Schritt 4 (Index 3): durch Koeffizient von x dividieren
     if(stepIndex===3){
       const side = (L.cx!==0 ? L : (R.cx!==0 ? R : null));
       if(!side || side.cx===0) return null;
@@ -455,10 +503,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   stepsBox.addEventListener("click", e=>{
     if(e.target.classList.contains("checkEqBtn")){
-      checkEquation(parseInt(e.target.dataset.step));
+      checkEquation(parseInt(e.target.dataset.step,10));
     }
     if(e.target.classList.contains("checkFormBtn")){
-      checkForm(parseInt(e.target.dataset.step));
+      checkForm(parseInt(e.target.dataset.step,10));
     }
   });
 
@@ -467,16 +515,20 @@ document.addEventListener("DOMContentLoaded", () => {
   function newEquation(){
     const g=generateEquation();
     originalEq=g.eq;
-    trueSolution=solveCanon(canonEq(originalEq));
+    const parts = originalEq.split("=");
+    origLeft = parts[0].trim();
+    origRight = parts[1].trim();
 
-    equationEl.textContent=g.eq;
-    solutionBox.style.display="none";
+    trueSolution = solveCanon(canonEq(originalEq));
+    solvedCurrent = false;
 
+    solutionBox.style.display = "none";
     renderSteps();
   }
 
-  newEqBtn.addEventListener("click", newEquation);
+  document.getElementById("newEqBtn").addEventListener("click", newEquation);
 
+  // Start
   newEquation();
 
 });
