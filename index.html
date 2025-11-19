@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gleichungstrainer – Schritt für Schritt</title>
+<style>
+  body{
+    font-family:system-ui,Arial,sans-serif;
+    margin:0;padding:20px;
+    text-align:center;
+    background:linear-gradient(to bottom right,#eef2ff,#e0f7fa);
+  }
+  h1{margin:10px 0;font-size:1.8em;color:#333}
+  #equation{font-size:1.5em;margin:15px auto;}
+  #steps{max-width:600px;margin:15px auto;text-align:left;}
+  .step-line{margin:4px 0;font-family:monospace;}
+  .step-label{color:#007bff;font-weight:bold;margin-right:4px;}
+  #feedback{margin:10px 0;font-size:1.05em;}
+  #feedback.ok{color:#2e7d32;}
+  #feedback.err{color:#c62828;}
+  input[type="text"]{
+    padding:8px;font-size:1.1em;width:90%;max-width:420px;
+    border-radius:8px;border:1px solid #aaa;text-align:center;
+  }
+  input:focus{outline:none;border-color:#007bff;}
+  button{
+    background:#007bff;color:#fff;border:none;
+    padding:8px 16px;margin:6px;border-radius:8px;cursor:pointer;
+    font-size:1em;
+  }
+  button:hover{background:#0056b3;}
+  #hintBox{
+    max-width:600px;margin:10px auto;
+    text-align:left;font-size:0.95em;color:#333;
+    background:#ffffffb0;border-radius:10px;padding:10px;
+  }
+  #probeBox{margin-top:18px;}
+</style>
+</head>
+<body>
+
+<h1>Gleichungstrainer – lineare Gleichungen</h1>
+
+<div id="equation">Lade Aufgabe ...</div>
+
+<div id="steps"></div>
+
+<div>
+  <div><strong>Nächste Zeile:</strong></div>
+  <input type="text" id="lineInput" placeholder="Gib hier die nächste Gleichungszeile ein">
+  <br>
+  <button id="checkBtn">Prüfen</button>
+  <button id="skipBtn">Neue Aufgabe</button>
+</div>
+
+<div id="feedback"></div>
+
+<div id="probeBox" style="display:none;">
+  <hr style="max-width:600px;">
+  <div><strong>Probe:</strong> Setze die gefundene Lösung ein und gib z.B. <code>19 = 19</code> ein.</div>
+  <input type="text" id="probeInput" placeholder="z.B. 19 = 19">
+  <br>
+  <button id="probeCheckBtn">Probe prüfen</button>
+  <div id="probeFeedback"></div>
+</div>
+
+<div id="hintBox">
+  <strong>Schema (wie im Beispiel):</strong>
+  <ul>
+    <li>gleichartige Glieder <b>ordnen</b> (erst x-Glieder, dann Zahlen)</li>
+    <li>gleichartige Glieder <b>zusammenfassen</b></li>
+    <li><b>x-Glieder auf eine Seite</b> bringen (Seite mit größerem x-Koeffizienten)</li>
+    <li><b>Zahlen auf die andere Seite</b> bringen</li>
+    <li><b>Auflösen</b> nach x</li>
+    <li><b>Probe nicht vergessen!</b></li>
+  </ul>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+  const equationEl = document.getElementById("equation");
+  const stepsEl = document.getElementById("steps");
+  const lineInput = document.getElementById("lineInput");
+  const checkBtn = document.getElementById("checkBtn");
+  const skipBtn = document.getElementById("skipBtn");
+  const feedbackEl = document.getElementById("feedback");
+
+  const probeBox = document.getElementById("probeBox");
+  const probeInput = document.getElementById("probeInput");
+  const probeCheckBtn = document.getElementById("probeCheckBtn");
+  const probeFeedback = document.getElementById("probeFeedback");
+
+  // --- Hilfsfunktionen zum Parsen ---
+
+  function normalizeMinus(s){
+    return s.replace(/−/g,"-");
+  }
+
+  // Seite wie "4x+2-3x-5" → {cx, c0}
+  function parseSide(str){
+    str = normalizeMinus(str).replace(/\s+/g,"");
+    if(str==="") return {cx:0, c0:0};
+    if(str[0] !== "+" && str[0] !== "-") str = "+" + str;
+
+    const termRegex = /[+\-][^+\-]+/g;
+    const terms = str.match(termRegex) || [];
+    let cx = 0, c0 = 0;
+
+    for(const t of terms){
+      const sign = t[0] === "-" ? -1 : 1;
+      const body = t.slice(1);
+      if(body.includes("x")){
+        const coeffStr = body.replace("x","");
+        const coeff = coeffStr === "" ? 1 : parseInt(coeffStr,10);
+        cx += sign * coeff;
+      }else{
+        const n = parseInt(body,10);
+        if(!isNaN(n)) c0 += sign * n;
+      }
+    }
+    return {cx, c0};
+  }
+
+  // Gleichung "LHS = RHS" → Normalform (ax)x + b = 0
+  function canonEq(eqStr){
+    const parts = eqStr.split("=");
+    if(parts.length !== 2) return null;
+    const L = parseSide(parts[0]);
+    const R = parseSide(parts[1]);
+    const ax = L.cx - R.cx;
+    const b  = L.c0 - R.c0;
+    return {ax, b};
+  }
+
+  // Spezieller Fall: "x = Zahl" oder "Zahl = x"
+  function parseSolutionLine(eqStr){
+    const parts = eqStr.replace(/\s+/g,"").split("=");
+    if(parts.length !== 2) return null;
+    if(parts[0] === "x" && /^-?\d+$/.test(parts[1])){
+      return parseInt(parts[1],10);
+    }
+    if(parts[1] === "x" && /^-?\d+$/.test(parts[0])){
+      return parseInt(parts[0],10);
+    }
+    return null;
+  }
+
+  // sind zwei Gleichungen äquivalent? (gleiche Lösungsmenge für lineare, keine Sonderfälle)
+  function equivalent(eq1, eq2){
+    const c1 = canonEq(eq1);
+    const c2 = canonEq(eq2);
+    if(!c1 || !c2) return false;
+    const {ax:a1,b:b1} = c1;
+    const {ax:a2,b:b2} = c2;
+    // beide Null → 0 = 0 (unendlich viele Lösungen); vermeiden wir beim Generieren
+    if(a1===0 && b1===0 && a2===0 && b2===0) return true;
+    // proportional?
+    return a1*b2 === a2*b1;
+  }
+
+  // Wert von x aus Normalform (ax)x + b = 0
+  function solveFromCanon(c){
+    if(c.ax === 0) return null;
+    if((-c.b) % c.ax !== 0) return null;
+    return (-c.b) / c.ax;
+  }
+
+  // Evaluierung Probe-Ausdruck "19 = 19"
+  function checkProbeString(str, solutionValue, originalEq){
+    // Erwartungswert aus Originalgleichung berechnen:
+    const partsOrig = originalEq.split("=");
+    const valSide = sideStr => {
+      const side = normalizeMinus(sideStr).replace(/\s+/g,"");
+      if(side==="") return 0;
+      if(side[0] !== "+" && side[0] !== "-") side = "+" + side;
+      const termRegex = /[+\-][^+\-]+/g;
+      const terms = side.match(termRegex) || [];
+      let sum = 0;
+      for(const t of terms){
+        const sign = t[0] === "-" ? -1 : 1;
+        const body = t.slice(1);
+        if(body.includes("x")){
+          const coeffStr = body.replace("x","");
+          const coeff = coeffStr === "" ? 1 : parseInt(coeffStr,10);
+          sum += sign * coeff * solutionValue;
+        }else{
+          const n = parseInt(body,10);
+          if(!isNaN(n)) sum += sign * n;
+        }
+      }
+      return sum;
+    };
+    const expectedL = valSide(partsOrig[0]);
+    const expectedR = valSide(partsOrig[1]);
+
+    // Nutzerprobe
+    const userParts = str.replace(/\s+/g,"").split("=");
+    if(userParts.length !== 2) return false;
+    const nL = parseInt(userParts[0],10);
+    const nR = parseInt(userParts[1],10);
+    if(isNaN(nL) || isNaN(nR)) return false;
+
+    return (nL===expectedL && nR===expectedR);
+  }
+
+  // --------------------------------------------------
+  // Aufgabengenerator (ähnlicher Stil wie in deinem Bild)
+  // --------------------------------------------------
+  function generateEquation(){
+    // wähle Lösung x0
+    const x0 = Math.floor(Math.random()*11)-5; // -5..5
+    if(x0 === 0) return generateEquation();
+
+    // wähle Koeffizienten
+    const p = Math.floor(Math.random()*10)-5 || 4; // LHS x-Koeff
+    const q = Math.floor(Math.random()*10)-5 || 3; // RHS x-Koeff
+
+    const c1 = Math.floor(Math.random()*21)-10; // LHS Konstante
+    const c2 = p*x0 + c1 - q*x0;               // s.t. Gleichung stimmt
+
+    // Hilfsfunktion: zerlege Koeffizient in 2–3 Terme
+    function decompose(k){
+      const parts=[];
+      let rest=k;
+      const count=2+Math.floor(Math.random()*2); // 2 oder 3 Terme
+      for(let i=0;i<count-1;i++){
+        const val = (rest===0)?0: (Math.floor(Math.random()*(Math.abs(rest))) - Math.floor(Math.abs(rest)/2));
+        parts.push(val);
+        rest -= val;
+      }
+      parts.push(rest);
+      return parts.filter(x=>x!==0);
+    }
+
+    const xPartsL = decompose(p);
+    const xPartsR = decompose(q);
+    const cPartsL = decompose(c1);
+    const cPartsR = decompose(c2);
+
+    function sideToString(xParts,cParts){
+      const pieces=[];
+      xParts.forEach(k=>{
+        const s = (k>=0?"+":"-") + (Math.abs(k)===1?"":Math.abs(k)) + "x";
+        pieces.push(s);
+      });
+      cParts.forEach(k=>{
+        const s = (k>=0?"+":"-") + Math.abs(k);
+        pieces.push(s);
+      });
+      let str = pieces.join("");
+      if(str[0]==="+") str = str.slice(1);
+      return str.replace(/\+/g," + ").replace(/-/g," - ");
+    }
+
+    const lhs = sideToString(xPartsL,cPartsL);
+    const rhs = sideToString(xPartsR,cPartsR);
+
+    return {eq: `${lhs} = ${rhs}`, solution:x0};
+  }
+
+  // --------------------------------------------------
+  // Trainer-Logik
+  // --------------------------------------------------
+
+  let originalEquation = "";
+  let canonicalOriginal = null;
+  let trueSolution = null;
+  let lines = []; // akzeptierte Zeilen
+
+  function renderSteps(){
+    stepsEl.innerHTML = "";
+    if(lines.length === 0) return;
+    lines.forEach((line,idx)=>{
+      const div=document.createElement("div");
+      div.className="step-line";
+      const label=document.createElement("span");
+      label.className="step-label";
+      label.textContent = (idx+1)+".";
+      const text=document.createElement("span");
+      text.textContent = " " + line;
+      div.appendChild(label);
+      div.appendChild(text);
+      stepsEl.appendChild(div);
+    });
+  }
+
+  function newEquation(){
+    const gen = generateEquation();
+    originalEquation = gen.eq;
+    canonicalOriginal = canonEq(originalEquation);
+    trueSolution = solveFromCanon(canonicalOriginal);
+
+    equationEl.textContent = "Aufgabe:  " + originalEquation;
+    feedbackEl.textContent="";
+    feedbackEl.className="";
+    probeBox.style.display="none";
+    probeFeedback.textContent="";
+    probeInput.value="";
+    lines = [];
+    renderSteps();
+    lineInput.value="";
+    lineInput.focus();
+  }
+
+  function checkLine(){
+    const input = lineInput.value.trim();
+    if(!input){
+      feedbackEl.className="err";
+      feedbackEl.textContent="Bitte gib eine Gleichung ein.";
+      return;
+    }
+
+    // Probe-Zeile (= Lösung) erkennen
+    const maybeSol = parseSolutionLine(input);
+    if(maybeSol !== null){
+      // Prüfen, ob das die korrekte Lösung ist
+      if(trueSolution !== null && maybeSol === trueSolution){
+        lines.push(input);
+        renderSteps();
+        feedbackEl.className="ok";
+        feedbackEl.textContent=`✅ Lösung korrekt: x = ${maybeSol}. Jetzt die Probe durchführen!`;
+        lineInput.value="";
+        // Probe-Bereich anzeigen
+        probeBox.style.display="block";
+        return;
+      }else{
+        feedbackEl.className="err";
+        feedbackEl.textContent="Diese Lösung ist nicht korrekt. Versuche, die Gleichung noch einmal zu bearbeiten.";
+        return;
+      }
+    }
+
+    // Allgemeiner Schritt: muss zur Ursprungsgleichung äquivalent sein
+    if(!equivalent(originalEquation,input)){
+      feedbackEl.className="err";
+      feedbackEl.textContent="❌ Diese Zeile ist nicht äquivalent zur ursprünglichen Gleichung. Überprüfe deine Umformung.";
+      return;
+    }
+
+    // korrekt – Schritt wird übernommen
+    lines.push(input);
+    renderSteps();
+    feedbackEl.className="ok";
+    feedbackEl.textContent="✅ Zeile ist korrekt umgeformt.";
+    lineInput.value="";
+    lineInput.focus();
+  }
+
+  function checkProbe(){
+    const s = probeInput.value.trim();
+    if(!s){
+      probeFeedback.style.color="#555";
+      probeFeedback.textContent="Bitte gib eine Probe ein, z.B. 19 = 19.";
+      return;
+    }
+    if(trueSolution===null){
+      probeFeedback.style.color="#c62828";
+      probeFeedback.textContent="Fehler: Lösung unbekannt.";
+      return;
+    }
+    const ok = checkProbeString(s,trueSolution,originalEquation);
+    if(ok){
+      probeFeedback.style.color="#2e7d32";
+      probeFeedback.textContent="✅ Probe stimmt – Gleichung ist korrekt gelöst.";
+    }else{
+      probeFeedback.style.color="#c62828";
+      probeFeedback.textContent="❌ Diese Probe passt nicht zur Gleichung bzw. zur Lösung. Rechne die Seiten noch einmal nach.";
+    }
+  }
+
+  // Events
+  checkBtn.addEventListener("click",checkLine);
+  lineInput.addEventListener("keydown",e=>{if(e.key==="Enter")checkLine();});
+  skipBtn.addEventListener("click",newEquation);
+  probeCheckBtn.addEventListener("click",checkProbe);
+  probeInput.addEventListener("keydown",e=>{if(e.key==="Enter")checkProbe();});
+
+  // Start
+  newEquation();
+});
+</script>
+
+</body>
+</html>
