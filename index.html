@@ -7,35 +7,86 @@
 <style>
   body{
     font-family:system-ui,Arial,sans-serif;
-    margin:0;padding:20px;
+    margin:0;
+    padding:20px;
     text-align:center;
     background:linear-gradient(to bottom right,#eef2ff,#e0f7fa);
   }
   h1{margin:10px 0;font-size:1.8em;color:#333}
   #equation{font-size:1.5em;margin:15px auto;}
-  #steps{max-width:600px;margin:15px auto;text-align:left;}
-  .step-line{margin:4px 0;font-family:monospace;}
-  .step-label{color:#007bff;font-weight:bold;margin-right:4px;}
-  #feedback{margin:10px 0;font-size:1.05em;}
-  #feedback.ok{color:#2e7d32;}
-  #feedback.err{color:#c62828;}
-  input[type="text"]{
-    padding:8px;font-size:1.1em;width:90%;max-width:420px;
-    border-radius:8px;border:1px solid #aaa;text-align:center;
+  .main-layout{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    align-items:flex-start;
+    gap:20px;
+    max-width:1100px;
+    margin:0 auto;
   }
-  input:focus{outline:none;border-color:#007bff;}
-  button{
-    background:#007bff;color:#fff;border:none;
-    padding:8px 16px;margin:6px;border-radius:8px;cursor:pointer;
+  #stepsBox{
+    flex:1 1 480px;
+    max-width:600px;
+    text-align:left;
+    background:#ffffffb8;
+    border-radius:12px;
+    padding:12px 16px;
+  }
+  #schemaBox{
+    flex:0 1 260px;
+    max-width:320px;
+    text-align:left;
+    background:#ffffff80;
+    border-radius:12px;
+    padding:12px 16px;
+    font-size:0.95em;
+  }
+  .stepRow{
+    margin:6px 0 10px;
+  }
+  .stepTitle{
+    font-weight:bold;
+    color:#007bff;
+    font-size:0.96em;
+  }
+  .stepHint{
+    font-size:0.9em;
+    color:#444;
+    margin-bottom:3px;
+  }
+  .stepInput{
+    width:100%;
+    max-width:100%;
+    box-sizing:border-box;
+    padding:6px 8px;
     font-size:1em;
+    border-radius:8px;
+    border:1px solid #aaa;
+    font-family:monospace;
+  }
+  .stepInput:focus{outline:none;border-color:#007bff;}
+  .btnRow{
+    margin-top:4px;
+  }
+  button{
+    background:#007bff;
+    color:white;
+    border:none;
+    padding:6px 12px;
+    margin:2px 4px 0 0;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:0.9em;
   }
   button:hover{background:#0056b3;}
-  #hintBox{
-    max-width:600px;margin:10px auto;
-    text-align:left;font-size:0.95em;color:#333;
-    background:#ffffffb0;border-radius:10px;padding:10px;
+  .fb{
+    font-size:0.9em;
+    margin-top:3px;
   }
-  #probeBox{margin-top:18px;}
+  .ok{color:#2e7d32;}
+  .err{color:#c62828;}
+  #newEqBtn{
+    margin-top:10px;
+  }
 </style>
 </head>
 <body>
@@ -44,149 +95,212 @@
 
 <div id="equation">Lade Aufgabe ...</div>
 
-<div id="steps"></div>
+<div class="main-layout">
+  <div id="stepsBox">
+    <div class="stepRow">
+      <div class="stepTitle">1. Gleichartige Glieder ordnen</div>
+      <div class="stepHint">Nur umstellen: erst alle x-Terme, dann die Zahlen (ohne Klammern).</div>
+      <input type="text" id="step1Input" class="stepInput" placeholder="z.B. 4x - 2x + 2 + 5 = 3x + 4x - 9 + 11">
+      <div class="btnRow">
+        <button data-step="1" class="checkBtn">Zeile 1 prüfen</button>
+      </div>
+      <div id="step1Fb" class="fb"></div>
+    </div>
 
-<div>
-  <div><strong>Nächste Zeile:</strong></div>
-  <input type="text" id="lineInput" placeholder="Gib hier die nächste Gleichungszeile ein">
-  <br>
-  <button id="checkBtn">Prüfen</button>
-  <button id="skipBtn">Neue Aufgabe</button>
-</div>
+    <div class="stepRow">
+      <div class="stepTitle">2. Gleichartige Glieder zusammenfassen</div>
+      <div class="stepHint">x-Terme und Zahlen auf jeder Seite zusammenfassen.</div>
+      <input type="text" id="step2Input" class="stepInput" placeholder="z.B. 2x + 7 = 7x + 2">
+      <div class="btnRow">
+        <button data-step="2" class="checkBtn">Zeile 2 prüfen</button>
+      </div>
+      <div id="step2Fb" class="fb"></div>
+    </div>
 
-<div id="feedback"></div>
+    <div class="stepRow">
+      <div class="stepTitle">3. x-Glieder auf eine Seite bringen</div>
+      <div class="stepHint">Alle x-Terme auf die Seite mit dem größeren x-Koeffizienten bringen.</div>
+      <input type="text" id="step3Input" class="stepInput" placeholder="z.B. 2x - 7x = 2 - 7">
+      <div class="btnRow">
+        <button data-step="3" class="checkBtn">Zeile 3 prüfen</button>
+      </div>
+      <div id="step3Fb" class="fb"></div>
+    </div>
 
-<div id="probeBox" style="display:none;">
-  <hr style="max-width:600px;">
-  <div><strong>Probe:</strong> Setze die gefundene Lösung ein und gib z.B. <code>19 = 19</code> ein.</div>
-  <input type="text" id="probeInput" placeholder="z.B. 19 = 19">
-  <br>
-  <button id="probeCheckBtn">Probe prüfen</button>
-  <div id="probeFeedback"></div>
-</div>
+    <div class="stepRow">
+      <div class="stepTitle">4. Zahlen auf die andere Seite bringen</div>
+      <div class="stepHint">Nur noch eine Seite mit x, andere Seite nur Zahlen.</div>
+      <input type="text" id="step4Input" class="stepInput" placeholder="z.B. -5x = -5">
+      <div class="btnRow">
+        <button data-step="4" class="checkBtn">Zeile 4 prüfen</button>
+      </div>
+      <div id="step4Fb" class="fb"></div>
+    </div>
 
-<div id="hintBox">
-  <strong>Schema (wie im Beispiel):</strong>
-  <ul>
-    <li>gleichartige Glieder <b>ordnen</b> (erst x-Glieder, dann Zahlen)</li>
-    <li>gleichartige Glieder <b>zusammenfassen</b></li>
-    <li><b>x-Glieder auf eine Seite</b> bringen (Seite mit größerem x-Koeffizienten)</li>
-    <li><b>Zahlen auf die andere Seite</b> bringen</li>
-    <li><b>Auflösen</b> nach x</li>
-    <li><b>Probe nicht vergessen!</b></li>
-  </ul>
+    <div class="stepRow">
+      <div class="stepTitle">5. Nach x auflösen</div>
+      <div class="stepHint">Endergebnis in der Form <b>x = ...</b>.</div>
+      <input type="text" id="step5Input" class="stepInput" placeholder="z.B. x = 1">
+      <div class="btnRow">
+        <button data-step="5" class="checkBtn">Zeile 5 prüfen</button>
+      </div>
+      <div id="step5Fb" class="fb"></div>
+    </div>
+
+    <div class="stepRow">
+      <div class="stepTitle">6. Probe</div>
+      <div class="stepHint">Setze x ein und berechne beide Seiten. Schreibe z.B. <code>19 = 19</code>.</div>
+      <input type="text" id="probeInput" class="stepInput" placeholder="z.B. 19 = 19">
+      <div class="btnRow">
+        <button id="probeCheckBtn">Probe prüfen</button>
+      </div>
+      <div id="probeFb" class="fb"></div>
+    </div>
+
+    <button id="newEqBtn">Neue Gleichung</button>
+  </div>
+
+  <div id="schemaBox">
+    <strong>Schematische Schritte (wie im Beispiel):</strong>
+    <ol>
+      <li><b>gleichartige Glieder ordnen</b><br><span style="font-size:0.9em;">x-Terme zusammen, Zahlen zusammen.</span></li>
+      <li><b>gleichartige Glieder zusammenfassen</b><br><span style="font-size:0.9em;">x-Terme und Zahlen je Seite vereinfachen.</span></li>
+      <li><b>x-Glieder auf eine Seite bringen</b><br><span style="font-size:0.9em;">auf die Seite mit größerem x-Koeffizienten.</span></li>
+      <li><b>Zahlen auf die andere Seite bringen</b></li>
+      <li><b>Nach x auflösen</b></li>
+      <li><b>Probe nicht vergessen!</b></li>
+    </ol>
+    <p style="font-size:0.85em;color:#555;">
+      Du darfst auch Schritte überspringen – jede Zeile wird nur auf
+      <b>algebraische Richtigkeit</b> geprüft.
+    </p>
+  </div>
 </div>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
   const equationEl = document.getElementById("equation");
-  const stepsEl = document.getElementById("steps");
-  const lineInput = document.getElementById("lineInput");
-  const checkBtn = document.getElementById("checkBtn");
-  const skipBtn = document.getElementById("skipBtn");
-  const feedbackEl = document.getElementById("feedback");
 
-  const probeBox = document.getElementById("probeBox");
+  const stepInputs = [
+    document.getElementById("step1Input"),
+    document.getElementById("step2Input"),
+    document.getElementById("step3Input"),
+    document.getElementById("step4Input"),
+    document.getElementById("step5Input")
+  ];
+  const stepFeedbacks = [
+    document.getElementById("step1Fb"),
+    document.getElementById("step2Fb"),
+    document.getElementById("step3Fb"),
+    document.getElementById("step4Fb"),
+    document.getElementById("step5Fb")
+  ];
   const probeInput = document.getElementById("probeInput");
-  const probeCheckBtn = document.getElementById("probeCheckBtn");
-  const probeFeedback = document.getElementById("probeFeedback");
+  const probeFb = document.getElementById("probeFb");
 
-  // --- Hilfsfunktionen zum Parsen ---
+  const checkButtons = document.querySelectorAll(".checkBtn");
+  const newEqBtn = document.getElementById("newEqBtn");
+  const probeCheckBtn = document.getElementById("probeCheckBtn");
+
+  // --------- Mathe-Hilfsfunktionen ----------
 
   function normalizeMinus(s){
     return s.replace(/−/g,"-");
   }
 
-  // Seite wie "4x+2-3x-5" → {cx, c0}
+  // Seite wie "4x+2-3x-5" -> {cx, c0}
   function parseSide(str){
     str = normalizeMinus(str).replace(/\s+/g,"");
-    if(str==="") return {cx:0, c0:0};
-    if(str[0] !== "+" && str[0] !== "-") str = "+" + str;
-
-    const termRegex = /[+\-][^+\-]+/g;
-    const terms = str.match(termRegex) || [];
+    if(str==="") return {cx:0,c0:0};
+    if(str[0] !== "+" && str[0] !== "-") str = "+"+str;
+    const terms = str.match(/[+\-][^+\-]+/g) || [];
     let cx = 0, c0 = 0;
-
     for(const t of terms){
-      const sign = t[0] === "-" ? -1 : 1;
+      const sign = t[0]==="-"?-1:1;
       const body = t.slice(1);
       if(body.includes("x")){
         const coeffStr = body.replace("x","");
-        const coeff = coeffStr === "" ? 1 : parseInt(coeffStr,10);
+        const coeff = coeffStr==="" ? 1 : parseFloat(coeffStr);
         cx += sign * coeff;
       }else{
-        const n = parseInt(body,10);
+        const n = parseFloat(body);
         if(!isNaN(n)) c0 += sign * n;
       }
     }
-    return {cx, c0};
+    return {cx,c0};
   }
 
-  // Gleichung "LHS = RHS" → Normalform (ax)x + b = 0
+  // "LHS = RHS" -> {ax,b} mit ax*x + b = 0
   function canonEq(eqStr){
     const parts = eqStr.split("=");
     if(parts.length !== 2) return null;
     const L = parseSide(parts[0]);
     const R = parseSide(parts[1]);
-    const ax = L.cx - R.cx;
-    const b  = L.c0 - R.c0;
-    return {ax, b};
+    return {ax: L.cx - R.cx, b: L.c0 - R.c0};
   }
 
-  // Spezieller Fall: "x = Zahl" oder "Zahl = x"
-  function parseSolutionLine(eqStr){
-    const parts = eqStr.replace(/\s+/g,"").split("=");
-    if(parts.length !== 2) return null;
-    if(parts[0] === "x" && /^-?\d+$/.test(parts[1])){
-      return parseInt(parts[1],10);
-    }
-    if(parts[1] === "x" && /^-?\d+$/.test(parts[0])){
-      return parseInt(parts[0],10);
-    }
-    return null;
-  }
-
-  // sind zwei Gleichungen äquivalent? (gleiche Lösungsmenge für lineare, keine Sonderfälle)
+  // sind zwei Gleichungen äquivalent? (gleiche Lösungsmenge)
   function equivalent(eq1, eq2){
     const c1 = canonEq(eq1);
     const c2 = canonEq(eq2);
     if(!c1 || !c2) return false;
-    const {ax:a1,b:b1} = c1;
-    const {ax:a2,b:b2} = c2;
-    // beide Null → 0 = 0 (unendlich viele Lösungen); vermeiden wir beim Generieren
+    const a1=c1.ax, b1=c1.b;
+    const a2=c2.ax, b2=c2.b;
+    // beide 0x + 0 = 0
     if(a1===0 && b1===0 && a2===0 && b2===0) return true;
     // proportional?
-    return a1*b2 === a2*b1;
+    return (a1*b2 === a2*b1);
   }
 
-  // Wert von x aus Normalform (ax)x + b = 0
   function solveFromCanon(c){
-    if(c.ax === 0) return null;
-    if((-c.b) % c.ax !== 0) return null;
-    return (-c.b) / c.ax;
+    if(!c || c.ax===0) return null;
+    return -c.b / c.ax;
   }
 
-  // Evaluierung Probe-Ausdruck "19 = 19"
+  // x = Zahl oder Zahl = x
+  function parseSolutionLine(eqStr){
+    const parts = eqStr.replace(/\s+/g,"").split("=");
+    if(parts.length!==2) return null;
+    if(parts[0]==="x" && /^-?\d+$/.test(parts[1])) return parseInt(parts[1],10);
+    if(parts[1]==="x" && /^-?\d+$/.test(parts[0])) return parseInt(parts[0],10);
+    return null;
+  }
+
+  // Prüfe, ob auf einer Seite alle x-Terme vor den Zahlen stehen
+  function varsThenNumbers(sideStr){
+    let s = normalizeMinus(sideStr).replace(/\s+/g,"");
+    if(s==="") return true;
+    if(s[0] !== "+" && s[0] !== "-") s = "+"+s;
+    const terms = s.match(/[+\-][^+\-]+/g) || [];
+    let seenNumber=false;
+    for(const t of terms){
+      const body = t.slice(1);
+      const isX = body.includes("x");
+      if(!isX) seenNumber=true;
+      if(isX && seenNumber) return false; // x nach Zahl
+    }
+    return true;
+  }
+
+  // Probe prüfen (z.B. "19 = 19")
   function checkProbeString(str, solutionValue, originalEq){
-    // Erwartungswert aus Originalgleichung berechnen:
     const partsOrig = originalEq.split("=");
     const valSide = sideStr => {
-      const side = normalizeMinus(sideStr).replace(/\s+/g,"");
-      if(side==="") return 0;
-      if(side[0] !== "+" && side[0] !== "-") side = "+" + side;
-      const termRegex = /[+\-][^+\-]+/g;
-      const terms = side.match(termRegex) || [];
+      let s = normalizeMinus(sideStr).replace(/\s+/g,"");
+      if(s==="") return 0;
+      if(s[0] !== "+" && s[0] !== "-") s = "+"+s;
+      const terms = s.match(/[+\-][^+\-]+/g) || [];
       let sum = 0;
       for(const t of terms){
-        const sign = t[0] === "-" ? -1 : 1;
+        const sign = t[0]==="-"?-1:1;
         const body = t.slice(1);
         if(body.includes("x")){
           const coeffStr = body.replace("x","");
-          const coeff = coeffStr === "" ? 1 : parseInt(coeffStr,10);
+          const coeff = coeffStr===""?1:parseFloat(coeffStr);
           sum += sign * coeff * solutionValue;
         }else{
-          const n = parseInt(body,10);
+          const n = parseFloat(body);
           if(!isNaN(n)) sum += sign * n;
         }
       }
@@ -195,187 +309,231 @@ document.addEventListener("DOMContentLoaded", () => {
     const expectedL = valSide(partsOrig[0]);
     const expectedR = valSide(partsOrig[1]);
 
-    // Nutzerprobe
     const userParts = str.replace(/\s+/g,"").split("=");
-    if(userParts.length !== 2) return false;
-    const nL = parseInt(userParts[0],10);
-    const nR = parseInt(userParts[1],10);
+    if(userParts.length!==2) return false;
+    const nL = parseFloat(userParts[0]);
+    const nR = parseFloat(userParts[1]);
     if(isNaN(nL) || isNaN(nR)) return false;
-
     return (nL===expectedL && nR===expectedR);
   }
 
-  // --------------------------------------------------
-  // Aufgabengenerator (ähnlicher Stil wie in deinem Bild)
-  // --------------------------------------------------
-  function generateEquation(){
-    // wähle Lösung x0
-    const x0 = Math.floor(Math.random()*11)-5; // -5..5
-    if(x0 === 0) return generateEquation();
+  // --------- Aufgabengenerator (unsortierte Terme) ----------
 
-    // wähle Koeffizienten
-    const p = Math.floor(Math.random()*10)-5 || 4; // LHS x-Koeff
-    const q = Math.floor(Math.random()*10)-5 || 3; // RHS x-Koeff
-
-    const c1 = Math.floor(Math.random()*21)-10; // LHS Konstante
-    const c2 = p*x0 + c1 - q*x0;               // s.t. Gleichung stimmt
-
-    // Hilfsfunktion: zerlege Koeffizient in 2–3 Terme
-    function decompose(k){
-      const parts=[];
-      let rest=k;
-      const count=2+Math.floor(Math.random()*2); // 2 oder 3 Terme
-      for(let i=0;i<count-1;i++){
-        const val = (rest===0)?0: (Math.floor(Math.random()*(Math.abs(rest))) - Math.floor(Math.abs(rest)/2));
-        parts.push(val);
-        rest -= val;
-      }
-      parts.push(rest);
-      return parts.filter(x=>x!==0);
-    }
-
-    const xPartsL = decompose(p);
-    const xPartsR = decompose(q);
-    const cPartsL = decompose(c1);
-    const cPartsR = decompose(c2);
-
-    function sideToString(xParts,cParts){
-      const pieces=[];
-      xParts.forEach(k=>{
-        const s = (k>=0?"+":"-") + (Math.abs(k)===1?"":Math.abs(k)) + "x";
-        pieces.push(s);
-      });
-      cParts.forEach(k=>{
-        const s = (k>=0?"+":"-") + Math.abs(k);
-        pieces.push(s);
-      });
-      let str = pieces.join("");
-      if(str[0]==="+") str = str.slice(1);
-      return str.replace(/\+/g," + ").replace(/-/g," - ");
-    }
-
-    const lhs = sideToString(xPartsL,cPartsL);
-    const rhs = sideToString(xPartsR,cPartsR);
-
-    return {eq: `${lhs} = ${rhs}`, solution:x0};
+  function randInt(min,max){
+    return Math.floor(Math.random()*(max-min+1))+min;
   }
 
-  // --------------------------------------------------
-  // Trainer-Logik
-  // --------------------------------------------------
+  function decompose(k){
+    if(k===0) return [];
+    const parts=[];
+    let rest=k;
+    const count = 2 + Math.floor(Math.random()*2); // 2 oder 3 Terme
+    for(let i=0;i<count-1;i++){
+      const range = Math.max(1,Math.floor(Math.abs(rest)));
+      const val = randInt(-range,range);
+      parts.push(val);
+      rest -= val;
+    }
+    parts.push(rest);
+    return parts.filter(v=>v!==0);
+  }
 
-  let originalEquation = "";
-  let canonicalOriginal = null;
+  function shuffle(arr){
+    for(let i=arr.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [arr[i],arr[j]]=[arr[j],arr[i]];
+    }
+  }
+
+  function isVarsFirst(terms){
+    let seenNum=false;
+    for(const t of terms){
+      if(t.kind==="c") seenNum=true;
+      if(t.kind==="x" && seenNum) return false;
+    }
+    return true;
+  }
+
+  function sideToString(terms){
+    let out="";
+    let first=true;
+    for(const t of terms){
+      const coef=t.coef;
+      if(coef===0) continue;
+      const sign = coef>=0?"+":"-";
+      const abs = Math.abs(coef);
+      let piece;
+      if(t.kind==="x"){
+        piece = (abs===1?"x":abs+"x");
+      }else{
+        piece = String(abs);
+      }
+      if(first){
+        out += (sign==="+"?piece:("-"+piece));
+        first=false;
+      }else{
+        out += " "+sign+" "+piece;
+      }
+    }
+    return out || "0";
+  }
+
+  function generateEquation(){
+    const x0 = (()=>{let v;do{v=randInt(-5,5);}while(v===0);return v;})();
+
+    let A, C;
+    do{A=randInt(-6,6);}while(A===0);
+    do{C=randInt(-6,6);}while(C===0 || C===A);
+
+    const B = randInt(-20,20);
+    const D = A*x0 + B - C*x0;
+
+    const xPartsL = decompose(A);
+    const xPartsR = decompose(C);
+    const cPartsL = decompose(B);
+    const cPartsR = decompose(D);
+
+    let termsL=[],termsR=[];
+    xPartsL.forEach(k=>termsL.push({kind:"x",coef:k}));
+    cPartsL.forEach(k=>termsL.push({kind:"c",coef:k}));
+    xPartsR.forEach(k=>termsR.push({kind:"x",coef:k}));
+    cPartsR.forEach(k=>termsR.push({kind:"c",coef:k}));
+
+    shuffle(termsL);
+    shuffle(termsR);
+
+    // Sicherstellen: mindestens eine Seite NICHT "x vor Zahlen"
+    if(isVarsFirst(termsL) && isVarsFirst(termsR)){
+      let idx = termsL.findIndex(t=>t.kind==="c");
+      if(idx>0){
+        const tmp=termsL[0];
+        termsL[0]=termsL[idx];
+        termsL[idx]=tmp;
+      }
+    }
+
+    const lhs = sideToString(termsL);
+    const rhs = sideToString(termsR);
+
+    return {equation: lhs+" = "+rhs, solution:x0};
+  }
+
+  // --------- Trainer-Logik ----------
+
+  let originalEq = "";
+  let canonOriginal = null;
   let trueSolution = null;
-  let lines = []; // akzeptierte Zeilen
 
-  function renderSteps(){
-    stepsEl.innerHTML = "";
-    if(lines.length === 0) return;
-    lines.forEach((line,idx)=>{
-      const div=document.createElement("div");
-      div.className="step-line";
-      const label=document.createElement("span");
-      label.className="step-label";
-      label.textContent = (idx+1)+".";
-      const text=document.createElement("span");
-      text.textContent = " " + line;
-      div.appendChild(label);
-      div.appendChild(text);
-      stepsEl.appendChild(div);
-    });
+  function setFb(el,text,ok){
+    el.textContent=text;
+    el.className = "fb " + (ok?"ok":"err");
   }
 
   function newEquation(){
     const gen = generateEquation();
-    originalEquation = gen.eq;
-    canonicalOriginal = canonEq(originalEquation);
-    trueSolution = solveFromCanon(canonicalOriginal);
+    originalEq = gen.equation;
+    canonOriginal = canonEq(originalEq);
+    trueSolution = solveFromCanon(canonOriginal);
 
-    equationEl.textContent = "Aufgabe:  " + originalEquation;
-    feedbackEl.textContent="";
-    feedbackEl.className="";
-    probeBox.style.display="none";
-    probeFeedback.textContent="";
+    equationEl.textContent = "Aufgabe:  " + originalEq;
+
+    // Felder leeren
+    stepInputs.forEach(inp=>inp.value="");
+    stepFeedbacks.forEach(fb=>{fb.textContent="";fb.className="fb";});
     probeInput.value="";
-    lines = [];
-    renderSteps();
-    lineInput.value="";
-    lineInput.focus();
+    probeFb.textContent="";
+    probeFb.className="fb";
+    stepInputs[0].focus();
   }
 
-  function checkLine(){
-    const input = lineInput.value.trim();
+  function checkStep(stepIndex){
+    const input = stepInputs[stepIndex].value.trim();
+    const fb = stepFeedbacks[stepIndex];
+
     if(!input){
-      feedbackEl.className="err";
-      feedbackEl.textContent="Bitte gib eine Gleichung ein.";
+      setFb(fb,"Bitte gib eine Gleichung in dieser Zeile ein.",false);
       return;
     }
 
-    // Probe-Zeile (= Lösung) erkennen
-    const maybeSol = parseSolutionLine(input);
-    if(maybeSol !== null){
-      // Prüfen, ob das die korrekte Lösung ist
-      if(trueSolution !== null && maybeSol === trueSolution){
-        lines.push(input);
-        renderSteps();
-        feedbackEl.className="ok";
-        feedbackEl.textContent=`✅ Lösung korrekt: x = ${maybeSol}. Jetzt die Probe durchführen!`;
-        lineInput.value="";
-        // Probe-Bereich anzeigen
-        probeBox.style.display="block";
-        return;
-      }else{
-        feedbackEl.className="err";
-        feedbackEl.textContent="Diese Lösung ist nicht korrekt. Versuche, die Gleichung noch einmal zu bearbeiten.";
+    // Schritt 5: Lösung in Form x = ...
+    if(stepIndex===4){
+      const sol = parseSolutionLine(input);
+      if(sol === null){
+        setFb(fb,"Gib die Lösung in der Form x = ... an (z.B. x = 3).",false);
         return;
       }
-    }
-
-    // Allgemeiner Schritt: muss zur Ursprungsgleichung äquivalent sein
-    if(!equivalent(originalEquation,input)){
-      feedbackEl.className="err";
-      feedbackEl.textContent="❌ Diese Zeile ist nicht äquivalent zur ursprünglichen Gleichung. Überprüfe deine Umformung.";
+      if(trueSolution !== null && sol === trueSolution){
+        setFb(fb,`✅ Lösung korrekt: x = ${sol}`,true);
+      }else{
+        setFb(fb,"❌ Diese Lösung ist nicht korrekt.",false);
+      }
       return;
     }
 
-    // korrekt – Schritt wird übernommen
-    lines.push(input);
-    renderSteps();
-    feedbackEl.className="ok";
-    feedbackEl.textContent="✅ Zeile ist korrekt umgeformt.";
-    lineInput.value="";
-    lineInput.focus();
+    // Schritte 1–4: allgemeine Gleichung prüfen
+    if(!input.includes("=")){
+      setFb(fb,"Bitte eine Gleichung mit '=' eingeben.",false);
+      return;
+    }
+
+    if(!equivalent(originalEq,input)){
+      setFb(fb,"❌ Diese Zeile ist nicht äquivalent zur Ausgangsgleichung. Überprüfe deine Umformung.",false);
+      return;
+    }
+
+    // Spezielle Hinweise für Schritt 1 (Ordnen)
+    if(stepIndex===0){
+      let hint="";
+      if(/[()]/.test(input)){
+        hint+=" Hinweis: Beim Ordnen bitte keine Klammern verwenden, nur Glieder umstellen.";
+      }
+      const parts = input.split("=");
+      if(!varsThenNumbers(parts[0]) || !varsThenNumbers(parts[1])){
+        hint+=" Hinweis: Schreibe zuerst alle x-Terme, dann die Zahlen.";
+      }
+      setFb(fb,"✅ Zeile 1 ist algebraisch richtig."+hint,true);
+    }else{
+      setFb(fb,`✅ Zeile ${stepIndex+1} ist algebraisch richtig.`,true);
+    }
   }
 
   function checkProbe(){
     const s = probeInput.value.trim();
     if(!s){
-      probeFeedback.style.color="#555";
-      probeFeedback.textContent="Bitte gib eine Probe ein, z.B. 19 = 19.";
+      setFb(probeFb,"Bitte gib eine Probe ein, z.B. 19 = 19.",false);
       return;
     }
     if(trueSolution===null){
-      probeFeedback.style.color="#c62828";
-      probeFeedback.textContent="Fehler: Lösung unbekannt.";
+      setFb(probeFb,"Fehler: Lösung unbekannt.",false);
       return;
     }
-    const ok = checkProbeString(s,trueSolution,originalEquation);
+    const ok = checkProbeString(s,trueSolution,originalEq);
     if(ok){
-      probeFeedback.style.color="#2e7d32";
-      probeFeedback.textContent="✅ Probe stimmt – Gleichung ist korrekt gelöst.";
+      setFb(probeFb,"✅ Probe stimmt – Gleichung korrekt gelöst.",true);
     }else{
-      probeFeedback.style.color="#c62828";
-      probeFeedback.textContent="❌ Diese Probe passt nicht zur Gleichung bzw. zur Lösung. Rechne die Seiten noch einmal nach.";
+      setFb(probeFb,"❌ Diese Probe passt nicht zur Gleichung bzw. zur Lösung. Rechne die Seiten noch einmal nach.",false);
     }
   }
 
   // Events
-  checkBtn.addEventListener("click",checkLine);
-  lineInput.addEventListener("keydown",e=>{if(e.key==="Enter")checkLine();});
-  skipBtn.addEventListener("click",newEquation);
+  checkButtons.forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      const step = parseInt(btn.getAttribute("data-step"),10)-1;
+      checkStep(step);
+    });
+  });
+
+  stepInputs.forEach((inp,idx)=>{
+    inp.addEventListener("keydown",e=>{
+      if(e.key==="Enter") checkStep(idx);
+    });
+  });
+
+  newEqBtn.addEventListener("click",newEquation);
   probeCheckBtn.addEventListener("click",checkProbe);
-  probeInput.addEventListener("keydown",e=>{if(e.key==="Enter")checkProbe();});
+  probeInput.addEventListener("keydown",e=>{
+    if(e.key==="Enter") checkProbe();
+  });
 
   // Start
   newEquation();
