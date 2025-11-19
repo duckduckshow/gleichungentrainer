@@ -38,8 +38,17 @@
     text-align:left;
   }
 
-  .eqRow{
-    margin-bottom:10px;
+  /* --- Ausrichtungs-Fix für Aufgabenzeile --- */
+  .eqTextLeft,
+  .eqTextRight{
+    flex:1;
+    min-width:150px;                 /* exakt wie die Eingabefelder */
+    padding:4px 10px;                /* möglichst gleichmäßige Optik */
+    font-size:1.2em;
+    font-weight:bold;
+    border:1px solid transparent;    /* gleiche Breite wie Inputs, aber unsichtbar */
+    box-sizing:border-box;
+    font-family:inherit;             /* exakt gleiche Schrift wie bisher */
   }
 
   .stepRow{
@@ -57,14 +66,6 @@
     display:flex;
     align-items:center;
     gap:8px;
-  }
-
-  .eqTextLeft,
-  .eqTextRight{
-    flex:1;
-    padding:4px 10px;
-    font-size:1.2em;
-    font-weight:bold;
   }
 
   .stepInputLeft,
@@ -207,7 +208,6 @@ document.addEventListener("DOMContentLoaded", () => {
   function equivalent(eq1,eq2){
     const c1=canonEq(eq1);
     const c2=canonEq(eq2);
-    // gleiche Lösungsmenge -> proportionale Koeffizienten
     return (c1.ax * c2.b === c2.ax * c1.b);
   }
 
@@ -306,7 +306,7 @@ document.addEventListener("DOMContentLoaded", () => {
     stepsBox.innerHTML = "";
     solutionBox.style.display = "none";
 
-    // Aufgabenzeile mit ausgerichtetem "="
+    /* --- Aufgabenzeile, perfekt ausgerichtet --- */
     const eqRow = document.createElement("div");
     eqRow.className = "eqRow";
     eqRow.innerHTML = `
@@ -318,7 +318,7 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
     stepsBox.appendChild(eqRow);
 
-    // Schritte
+    /* --- Schritte --- */
     stepNames.forEach((name,i)=>{
       const hasForm = (i>=1 && i<=3);
 
@@ -368,7 +368,6 @@ document.addEventListener("DOMContentLoaded", () => {
       fb.textContent="✔ äquivalent zur Ausgangsgleichung.";
       fb.className="fb ok";
 
-      // Wenn letzte Zeile und noch nicht gezählt → Lösungsmenge + Zähler
       if(step === 4 && !solvedCurrent){
         solvedCurrent = true;
         solvedCount += 1;
@@ -399,7 +398,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let hasX=false;
 
-    // Schritt 2 (Index 1): x-Glied entfernen
+    // Schritt 2 (Index 1)
     if(stepIndex===1){
       if(!valStr.includes("x")) return null;
       hasX=true;
@@ -407,7 +406,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if(valStr==="") valStr="1";
       if(valStr==="+" || valStr==="-") valStr+="1";
     }else{
-      // Kein x erlaubt bei Schritt 3 und 4
       if(valStr.includes("x")) return null;
     }
 
@@ -421,7 +419,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const [Lstr,Rstr] = eqStr.split("=");
     const L=parseSide(Lstr), R=parseSide(Rstr);
 
-    // Schritt 2 (Index 1): x-Glieder auf eine Seite bringen
     if(stepIndex===1){
       if(L.cx===0 || R.cx===0) return null;
       const absL=Math.abs(L.cx), absR=Math.abs(R.cx);
@@ -430,7 +427,6 @@ document.addEventListener("DOMContentLoaded", () => {
       return {type:(del>0?"+":"-"), val:Math.abs(del), hasX:true};
     }
 
-    // Schritt 3 (Index 2): Zahlen auf die andere Seite
     if(stepIndex===2){
       const side = (L.cx!==0 ? L : (R.cx!==0 ? R : null));
       if(!side || side.c0===0) return null;
@@ -438,7 +434,6 @@ document.addEventListener("DOMContentLoaded", () => {
       return {type:(del>0?"+":"-"), val:Math.abs(del), hasX:false};
     }
 
-    // Schritt 4 (Index 3): durch Koeffizient von x dividieren
     if(stepIndex===3){
       const side = (L.cx!==0 ? L : (R.cx!==0 ? R : null));
       if(!side || side.cx===0) return null;
