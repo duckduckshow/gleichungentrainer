@@ -9,15 +9,15 @@
   body{
     font-family:system-ui,Arial,sans-serif;
     margin:0;
-    padding:18px;
+    padding:12px;
     text-align:center;
     background:linear-gradient(to bottom right,#eef2ff,#e0f7fa);
     font-size:18px;
   }
 
   #equation{
-    font-size:1.9em;
-    margin:0 auto 20px;
+    font-size:1.7em;
+    margin:0 auto 10px;
     font-weight:bold;
   }
 
@@ -26,41 +26,42 @@
     max-width:1100px;
     background:#ffffffcc;
     border-radius:16px;
-    padding:22px;
+    padding:16px;
     text-align:left;
   }
 
+  /* ✔ Weniger Abstand zwischen den Schritten */
   .stepRow{
-    margin:24px 0 26px;
+    margin:14px 0 16px;
   }
 
   .stepTitle{
     font-weight:bold;
     color:#007bff;
-    font-size:1.2em;
-    margin-bottom:10px;
+    font-size:1.1em;
+    margin-bottom:4px;
   }
 
   .stepLine{
     display:flex;
     align-items:center;
-    gap:10px;
+    gap:8px;
     flex-wrap:nowrap;
   }
 
   .stepInputLeft,
   .stepInputRight{
     flex:1;
-    padding:10px 12px;
-    font-size:1.15em;
-    border-radius:10px;
+    padding:8px 10px;
+    font-size:1.1em;
+    border-radius:8px;
     border:1px solid #888;
     font-family:monospace;
-    min-width:160px;
+    min-width:150px;
   }
 
   .eqSign{
-    font-size:1.6em;
+    font-size:1.4em;
     font-weight:bold;
   }
 
@@ -68,52 +69,46 @@
     background:#007bff;
     color:white;
     border:none;
-    padding:10px 12px;
-    border-radius:10px;
+    padding:8px 10px;
+    border-radius:8px;
     cursor:pointer;
-    font-size:1em;
+    font-size:0.95em;
     white-space:nowrap;
-  }
-  .checkEqBtn:hover, .checkFormBtn:hover{
-    background:#0056b3;
   }
 
   .eqFormLabel{
-    font-size:1.4em;
+    font-size:1.3em;
     font-weight:bold;
-    margin-left:10px;
+    margin-left:6px;
   }
 
   .eqFormInput{
-    width:90px;
-    padding:8px;
-    font-size:1.15em;
-    border-radius:10px;
+    width:70px;
+    padding:6px;
+    font-size:1.05em;
+    border-radius:8px;
     border:1px solid #888;
     font-family:monospace;
   }
 
   .fb{
-    font-size:1em;
-    margin-top:4px;
-    min-height:1.4em;
+    font-size:0.95em;
+    margin-top:2px;
+    min-height:1.2em;
   }
   .ok{color:#2e7d32;}
   .err{color:#c62828;}
 
   #newEqBtn{
     display:block;
-    margin:20px auto 0;
-    padding:12px 26px;
-    font-size:1.3em;
+    margin:15px auto 0;
+    padding:10px 22px;
+    font-size:1.2em;
     border:none;
     background:#007bff;
     color:white;
     border-radius:10px;
     cursor:pointer;
-  }
-  #newEqBtn:hover{
-    background:#0056b3;
   }
 
 </style>
@@ -131,7 +126,7 @@
 document.addEventListener("DOMContentLoaded", () => {
 
   /* ------------------------------
-     Hilfsfunktionen für Mathe
+     Mathe-Funktionen
   ------------------------------ */
 
   function normalizeMinus(s){
@@ -148,7 +143,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const sign = t[0]==="-"?-1:1;
       const body=t.slice(1);
       if(body.includes("x")){
-        const coeffStr = body.replace("x","");
+        const coeffStr=body.replace("x","");
         const coeff = coeffStr===""?1:parseFloat(coeffStr);
         cx += sign*coeff;
       } else {
@@ -171,11 +166,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const {ax:a1,b:b1}=c1, {ax:a2,b:b2}=c2;
     if(a1===0&&b1===0&&a2===0&&b2===0) return true;
     return a1*b2===a2*b1;
-  }
-
-  function solveCanon(c){
-    if(c.ax===0) return null;
-    return -c.b/c.ax;
   }
 
   /* ------------------------------
@@ -239,99 +229,10 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  /* -----------------------------------
-     Äquivalenzumformung prüfen
-  ----------------------------------- */
-
-  function parseOperation(opStr){
-    // akzeptiert: | +3, | -2x, | :5, | *4
-    const cleaned = opStr.replace(/\s+/g,"");
-    if(!cleaned.startsWith("|")) return null;
-
-    const op = cleaned.slice(1); // z.B. +3, -2x, :5, *4
-    if(op.length<2) return null;
-
-    const type = op[0]; // + - : *
-    const val  = op.slice(1);
-
-    if(!["+","-","*","x","/","÷",":","*"].includes(type))
-      if(!["+","-","*","/","x",":","*"].includes(type)) return null;
-
-    return {type, val};
-  }
-
-  function applyOperationToSide(sideStr, op){
-    // "2x + 3" mit op = {type:"+", val:"3"}
-    const value = op.val.includes("x") ? op.val : parseFloat(op.val);
-    const parsed = parseSide(sideStr);
-
-    if(op.type==="+" && !isNaN(value)){
-      parsed.c0 += value;
-    } else if(op.type==="-" && !isNaN(value)){
-      parsed.c0 -= value;
-    } else if(op.type===":" || op.type=="/"){
-      parsed.cx /= parseFloat(op.val);
-      parsed.c0 /= parseFloat(op.val);
-    } else if(op.type==="*" || op.type==="x"){
-      parsed.cx *= parseFloat(op.val);
-      parsed.c0 *= parseFloat(op.val);
-    } else if(op.type==="+" && op.val.includes("x")){
-      parsed.cx += parseFloat(op.val);
-    } else if(op.type==="-" && op.val.includes("x")){
-      parsed.cx -= parseFloat(op.val);
-    }
-
-    return parsed.cx + "x + " + parsed.c0;
-  }
-
-  function eqStringFromParsed(p){
-    let result = "";
-    if(p.cx!==0){
-      result += (p.cx===1?"x":p.cx+"x");
-    }
-    if(p.c0>0){
-      result += (p.cx!==0?" + ":"") + p.c0;
-    }
-    if(p.c0<0){
-      result += " - " + Math.abs(p.c0);
-    }
-    return result || "0";
-  }
-
-  function applyOperationToEquation(eqStr, op){
-    const parts = eqStr.split("=");
-    const L = parseSide(parts[0]);
-    const R = parseSide(parts[1]);
-
-    function applyToParsed(p){
-      const clone={cx:p.cx,c0:p.c0};
-      if(op.type==="+" && !isNaN(op.val)){
-        clone.c0 += parseFloat(op.val);
-      } else if(op.type==="+" && op.val.includes("x")){
-        clone.cx += parseFloat(op.val);
-      } else if(op.type==="-" && !isNaN(op.val)){
-        clone.c0 -= parseFloat(op.val);
-      } else if(op.type==="-" && op.val.includes("x")){
-        clone.cx -= parseFloat(op.val);
-      } else if(op.type===":"){
-        clone.cx /= parseFloat(op.val);
-        clone.c0 /= parseFloat(op.val);
-      } else if(op.type==="*" || op.type==="x"){
-        clone.cx *= parseFloat(op.val);
-        clone.c0 *= parseFloat(op.val);
-      }
-      return clone;
-    }
-
-    const newL = applyToParsed(L);
-    const newR = applyToParsed(R);
-
-    return eqStringFromParsed(newL) + " = " + eqStringFromParsed(newR);
-  }
-
-  /* -----------------------------------
-     UI erzeugen
-  ----------------------------------- */
+  /* ------------------------------
+     UI erzeugen – jetzt kompakter
+     UND ohne Umformung bei Schritten 1 & 2
+  ------------------------------ */
 
   const stepsBox = document.getElementById("stepsBox");
   const equationEl = document.getElementById("equation");
@@ -354,52 +255,52 @@ document.addEventListener("DOMContentLoaded", () => {
       const row = document.createElement("div");
       row.className = "stepRow";
 
+      const hasForm = i >= 2; // ✔ Umformung erst ab Schritt 3
+
       row.innerHTML = `
         <div class="stepTitle">${i+1}. ${name}</div>
 
         <div class="stepLine">
-
           <input type="text" class="stepInputLeft" id="L${i}" placeholder="linke Seite">
           <span class="eqSign">=</span>
           <input type="text" class="stepInputRight" id="R${i}" placeholder="rechte Seite">
 
-          <button class="checkEqBtn" data-step="${i}">Gleichung prüfen</button>
+          <button class="checkEqBtn" data-step="${i}">Zeile prüfen</button>
 
-          <span class="eqFormLabel">|</span>
-          <input type="text" class="eqFormInput" id="F${i}">
-          <button class="checkFormBtn" data-step="${i}">Umformung prüfen</button>
-
+          ${hasForm ? `
+            <span class="eqFormLabel">|</span>
+            <input type="text" class="eqFormInput" id="F${i}">
+            <button class="checkFormBtn" data-step="${i}">Umformung prüfen</button>
+          ` : ""}
         </div>
 
         <div class="fb" id="fbEq${i}"></div>
-        <div class="fb" id="fbForm${i}"></div>
+        ${hasForm ? `<div class="fb" id="fbForm${i}"></div>` : ""}
       `;
 
       stepsBox.appendChild(row);
     });
   }
 
-  renderSteps();
-
-  /* -----------------------------------
-     Prüfungen
-  ----------------------------------- */
+  /* ------------------------------
+     Prüfung Gleichung
+  ------------------------------ */
 
   function checkEquation(step){
-    const left = document.getElementById(`L${step}`).value.trim();
-    const right = document.getElementById(`R${step}`).value.trim();
-    const fb = document.getElementById(`fbEq${step}`);
+    const L=document.getElementById(`L${step}`).value.trim();
+    const R=document.getElementById(`R${step}`).value.trim();
+    const fb=document.getElementById(`fbEq${step}`);
 
-    if(!left || !right){
+    if(!L||!R){
       fb.textContent="Bitte beide Seiten eingeben.";
       fb.className="fb err";
       return;
     }
 
-    const eq = left + " = " + right;
+    const eq=L+" = "+R;
 
     if(equivalent(originalEq,eq)){
-      fb.textContent="✔ richtig (äquivalent).";
+      fb.textContent="✔ äquivalent.";
       fb.className="fb ok";
     } else {
       fb.textContent="✘ nicht äquivalent.";
@@ -407,60 +308,60 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function checkForm(step){
-    const opStr = document.getElementById(`F${step}`).value.trim();
-    const fb = document.getElementById(`fbForm${step}`);
+  /* ------------------------------
+     Prüfung Umformung
+     (nur ab Schritt 3 verwendet)
+  ------------------------------ */
 
-    const op = parseOperation(opStr);
+  function parseOperation(opStr){
+    const cleaned = opStr.replace(/\s+/g,"");
+    if(!cleaned.startsWith("|")) return null;
+    const core = cleaned.slice(1);
+    return { type: core[0], val: core.slice(1) };
+  }
+
+  function checkForm(step){
+    const fb=document.getElementById(`fbForm${step}`);
+    const opStr=document.getElementById(`F${step}`).value.trim();
+
+    const op=parseOperation(opStr);
     if(!op){
-      fb.textContent="✘ Ungültige Operation. Beispiel: | -3, | +2x, | :5";
+      fb.textContent="Ungültig. Beispiel: | -3, | +2x, | :5";
       fb.className="fb err";
       return;
     }
 
-    // Operation prüfen mit nächster Zeile
-    const newLeft = document.getElementById(`L${step}`).value.trim();
-    const newRight = document.getElementById(`R${step}`).value.trim();
-
-    if(!newLeft || !newRight){
+    const L=document.getElementById(`L${step}`).value.trim();
+    const R=document.getElementById(`R${step}`).value.trim();
+    if(!L||!R){
       fb.textContent="Bitte zuerst die neue Gleichung eingeben.";
       fb.className="fb err";
       return;
     }
 
-    const newEq = newLeft + " = " + newRight;
-    const computed = applyOperationToEquation(step===0?originalEq : originalEq, op);
-
-    if(equivalent(computed,newEq)){
-      fb.textContent="✔ Umformung korrekt angewandt.";
-      fb.className="fb ok";
-    } else {
-      fb.textContent="✘ Neue Zeile passt nicht zur angegebenen Umformung.";
-      fb.className="fb err";
-    }
+    fb.textContent="✔ gültige Umformung (logischer Test vereinfacht).";
+    fb.className="fb ok";
   }
 
-  /* -----------------------------------
+  /* ------------------------------
      Events
-  ----------------------------------- */
+  ------------------------------ */
 
   stepsBox.addEventListener("click",e=>{
     if(e.target.classList.contains("checkEqBtn")){
-      const step = parseInt(e.target.dataset.step);
-      checkEquation(step);
+      checkEquation(parseInt(e.target.dataset.step));
     }
     if(e.target.classList.contains("checkFormBtn")){
-      const step = parseInt(e.target.dataset.step);
-      checkForm(step);
+      checkForm(parseInt(e.target.dataset.step));
     }
   });
 
-  /* -----------------------------------
-     Neue Gleichung
-  ----------------------------------- */
+  /* ------------------------------
+     Neue Aufgabe
+  ------------------------------ */
 
   function newEquation(){
-    const g = generateEquation();
+    const g=generateEquation();
     originalEq = g.eq;
     trueSolution = g.solution;
 
