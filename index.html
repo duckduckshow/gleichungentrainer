@@ -30,7 +30,6 @@
     text-align:left;
   }
 
-  /* ✔ Weniger Abstand zwischen den Schritten */
   .stepRow{
     margin:14px 0 16px;
   }
@@ -115,7 +114,7 @@
 </head>
 <body>
 
-<div id="equation">Lade Aufgabe ...</div>
+<div id="equation"></div>
 
 <div id="stepsBox"></div>
 
@@ -230,8 +229,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /* ------------------------------
-     UI erzeugen – jetzt kompakter
-     UND ohne Umformung bei Schritten 1 & 2
+     UI erzeugen
   ------------------------------ */
 
   const stepsBox = document.getElementById("stepsBox");
@@ -252,12 +250,13 @@ document.addEventListener("DOMContentLoaded", () => {
     stepsBox.innerHTML = "";
 
     stepNames.forEach((name,i)=>{
-      const row = document.createElement("div");
-      row.className = "stepRow";
+      const row=document.createElement("div");
+      row.className="stepRow";
 
-      const hasForm = i >= 2; // ✔ Umformung erst ab Schritt 3
+      // ✔ Umformung nur in Schritten 2,3,4
+      const hasForm = (i >= 1 && i <= 3);
 
-      row.innerHTML = `
+      row.innerHTML=`
         <div class="stepTitle">${i+1}. ${name}</div>
 
         <div class="stepLine">
@@ -270,7 +269,7 @@ document.addEventListener("DOMContentLoaded", () => {
           ${hasForm ? `
             <span class="eqFormLabel">|</span>
             <input type="text" class="eqFormInput" id="F${i}">
-            <button class="checkFormBtn" data-step="${i}">Umformung prüfen</button>
+            <button class="checkFormBtn" data-step="${i}">Umformung</button>
           ` : ""}
         </div>
 
@@ -283,7 +282,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /* ------------------------------
-     Prüfung Gleichung
+     Prüfungen
   ------------------------------ */
 
   function checkEquation(step){
@@ -292,7 +291,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const fb=document.getElementById(`fbEq${step}`);
 
     if(!L||!R){
-      fb.textContent="Bitte beide Seiten eingeben.";
+      fb.textContent="Beide Seiten eingeben.";
       fb.className="fb err";
       return;
     }
@@ -308,16 +307,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  /* ------------------------------
-     Prüfung Umformung
-     (nur ab Schritt 3 verwendet)
-  ------------------------------ */
-
   function parseOperation(opStr){
-    const cleaned = opStr.replace(/\s+/g,"");
-    if(!cleaned.startsWith("|")) return null;
-    const core = cleaned.slice(1);
-    return { type: core[0], val: core.slice(1) };
+    const c=opStr.replace(/\s+/g,"");
+    if(!c.startsWith("|")) return null;
+    return {type:c[1], val:c.slice(2)};
   }
 
   function checkForm(step){
@@ -326,7 +319,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const op=parseOperation(opStr);
     if(!op){
-      fb.textContent="Ungültig. Beispiel: | -3, | +2x, | :5";
+      fb.textContent="Ungültig: | -3, | +2x, | :5";
       fb.className="fb err";
       return;
     }
@@ -334,12 +327,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const L=document.getElementById(`L${step}`).value.trim();
     const R=document.getElementById(`R${step}`).value.trim();
     if(!L||!R){
-      fb.textContent="Bitte zuerst die neue Gleichung eingeben.";
+      fb.textContent="Neue Gleichung zuerst eingeben.";
       fb.className="fb err";
       return;
     }
 
-    fb.textContent="✔ gültige Umformung (logischer Test vereinfacht).";
+    fb.textContent="✔ gültige Umformung (Basisprüfung).";
     fb.className="fb ok";
   }
 
@@ -357,20 +350,21 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   /* ------------------------------
-     Neue Aufgabe
+     Neue Gleichung laden
   ------------------------------ */
 
   function newEquation(){
     const g=generateEquation();
-    originalEq = g.eq;
-    trueSolution = g.solution;
+    originalEq=g.eq;
+    trueSolution=g.solution;
 
-    equationEl.textContent = "Aufgabe: " + originalEq;
+    // Titel jetzt OHNE "Aufgabe:"
+    equationEl.textContent = g.eq;
 
     renderSteps();
   }
 
-  document.getElementById("newEqBtn").addEventListener("click", newEquation);
+  newEqBtn.addEventListener("click", newEquation);
 
   newEquation();
 
