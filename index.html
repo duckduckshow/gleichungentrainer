@@ -8,84 +8,115 @@
   body{
     font-family:system-ui,Arial,sans-serif;
     margin:0;
-    padding:20px;
+    padding:24px;
     text-align:center;
     background:linear-gradient(to bottom right,#eef2ff,#e0f7fa);
+    font-size:18px;
   }
-  h1{margin:10px 0;font-size:1.8em;color:#333}
-  #equation{font-size:1.5em;margin:15px auto;}
+  h1{
+    margin:10px 0 20px;
+    font-size:2.1em;
+    color:#333;
+  }
+  #equation{
+    font-size:2em;
+    margin:20px auto 25px;
+    font-weight:bold;
+  }
   .main-layout{
     display:flex;
     flex-wrap:wrap;
     justify-content:center;
     align-items:flex-start;
-    gap:20px;
-    max-width:1100px;
+    gap:24px;
+    max-width:1200px;
     margin:0 auto;
   }
   #stepsBox{
-    flex:1 1 480px;
-    max-width:600px;
+    flex:1 1 520px;
+    max-width:700px;
     text-align:left;
-    background:#ffffffb8;
-    border-radius:12px;
-    padding:12px 16px;
+    background:#ffffffcc;
+    border-radius:16px;
+    padding:16px 20px 20px;
   }
   #schemaBox{
-    flex:0 1 260px;
-    max-width:320px;
+    flex:0 1 280px;
+    max-width:340px;
     text-align:left;
-    background:#ffffff80;
-    border-radius:12px;
-    padding:12px 16px;
-    font-size:0.95em;
+    background:#ffffff99;
+    border-radius:16px;
+    padding:16px 20px;
+    font-size:0.98em;
   }
   .stepRow{
-    margin:6px 0 10px;
+    margin:10px 0 16px;
   }
   .stepTitle{
     font-weight:bold;
     color:#007bff;
-    font-size:0.96em;
+    font-size:1.05em;
+    margin-bottom:4px;
   }
   .stepHint{
-    font-size:0.9em;
+    font-size:0.95em;
     color:#444;
-    margin-bottom:3px;
+    margin-bottom:6px;
+  }
+
+  .stepLine{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:4px;
   }
   .stepInput{
-    width:100%;
-    max-width:100%;
+    flex:1;
     box-sizing:border-box;
-    padding:6px 8px;
-    font-size:1em;
-    border-radius:8px;
-    border:1px solid #aaa;
+    padding:8px 10px;
+    font-size:1.1em;
+    border-radius:10px;
+    border:1px solid #888;
     font-family:monospace;
   }
-  .stepInput:focus{outline:none;border-color:#007bff;}
-  .btnRow{
-    margin-top:4px;
+  .stepInput:focus{
+    outline:none;
+    border-color:#007bff;
+    box-shadow:0 0 0 2px #007bff33;
+  }
+  .eqSign{
+    font-size:1.4em;
+    font-weight:bold;
+    padding:0 4px;
   }
   button{
     background:#007bff;
     color:white;
     border:none;
-    padding:6px 12px;
-    margin:2px 4px 0 0;
-    border-radius:8px;
+    padding:8px 14px;
+    border-radius:10px;
     cursor:pointer;
-    font-size:0.9em;
+    font-size:0.98em;
+    white-space:nowrap;
   }
-  button:hover{background:#0056b3;}
+  button:hover{
+    background:#0056b3;
+  }
+  .smallBtn{
+    font-size:0.95em;
+    padding:8px 10px;
+  }
   .fb{
     font-size:0.9em;
     margin-top:3px;
+    min-height:1.4em;
   }
   .ok{color:#2e7d32;}
   .err{color:#c62828;}
   #newEqBtn{
     margin-top:10px;
+    font-size:1.05em;
+    padding:10px 18px;
   }
 </style>
 </head>
@@ -97,64 +128,69 @@
 
 <div class="main-layout">
   <div id="stepsBox">
+    <!-- Schritt 1 -->
     <div class="stepRow">
       <div class="stepTitle">1. Gleichartige Glieder ordnen</div>
       <div class="stepHint">Nur umstellen: erst alle x-Terme, dann die Zahlen (ohne Klammern).</div>
-      <input type="text" id="step1Input" class="stepInput" placeholder="z.B. 4x - 2x + 2 + 5 = 3x + 4x - 9 + 11">
-      <div class="btnRow">
-        <button data-step="1" class="checkBtn">Zeile 1 prüfen</button>
+      <div class="stepLine">
+        <input type="text" id="step1Left" class="stepInput" placeholder="linke Seite, z.B. 4x - 2x + 2 + 5">
+        <span class="eqSign">=</span>
+        <input type="text" id="step1Right" class="stepInput" placeholder="rechte Seite, z.B. 3x + 4x - 9 + 11">
+        <button data-step="1" class="checkBtn smallBtn">prüfen</button>
       </div>
       <div id="step1Fb" class="fb"></div>
     </div>
 
+    <!-- Schritt 2 -->
     <div class="stepRow">
       <div class="stepTitle">2. Gleichartige Glieder zusammenfassen</div>
       <div class="stepHint">x-Terme und Zahlen auf jeder Seite zusammenfassen.</div>
-      <input type="text" id="step2Input" class="stepInput" placeholder="z.B. 2x + 7 = 7x + 2">
-      <div class="btnRow">
-        <button data-step="2" class="checkBtn">Zeile 2 prüfen</button>
+      <div class="stepLine">
+        <input type="text" id="step2Left" class="stepInput" placeholder="z.B. 2x + 7">
+        <span class="eqSign">=</span>
+        <input type="text" id="step2Right" class="stepInput" placeholder="z.B. 7x + 2">
+        <button data-step="2" class="checkBtn smallBtn">prüfen</button>
       </div>
       <div id="step2Fb" class="fb"></div>
     </div>
 
+    <!-- Schritt 3 -->
     <div class="stepRow">
       <div class="stepTitle">3. x-Glieder auf eine Seite bringen</div>
       <div class="stepHint">Alle x-Terme auf die Seite mit dem größeren x-Koeffizienten bringen.</div>
-      <input type="text" id="step3Input" class="stepInput" placeholder="z.B. 2x - 7x = 2 - 7">
-      <div class="btnRow">
-        <button data-step="3" class="checkBtn">Zeile 3 prüfen</button>
+      <div class="stepLine">
+        <input type="text" id="step3Left" class="stepInput" placeholder="z.B. 2x - 7x">
+        <span class="eqSign">=</span>
+        <input type="text" id="step3Right" class="stepInput" placeholder="z.B. 2 - 7">
+        <button data-step="3" class="checkBtn smallBtn">prüfen</button>
       </div>
       <div id="step3Fb" class="fb"></div>
     </div>
 
+    <!-- Schritt 4 -->
     <div class="stepRow">
       <div class="stepTitle">4. Zahlen auf die andere Seite bringen</div>
       <div class="stepHint">Nur noch eine Seite mit x, andere Seite nur Zahlen.</div>
-      <input type="text" id="step4Input" class="stepInput" placeholder="z.B. -5x = -5">
-      <div class="btnRow">
-        <button data-step="4" class="checkBtn">Zeile 4 prüfen</button>
+      <div class="stepLine">
+        <input type="text" id="step4Left" class="stepInput" placeholder="z.B. -5x">
+        <span class="eqSign">=</span>
+        <input type="text" id="step4Right" class="stepInput" placeholder="z.B. -5">
+        <button data-step="4" class="checkBtn smallBtn">prüfen</button>
       </div>
       <div id="step4Fb" class="fb"></div>
     </div>
 
+    <!-- Schritt 5 -->
     <div class="stepRow">
       <div class="stepTitle">5. Nach x auflösen</div>
       <div class="stepHint">Endergebnis in der Form <b>x = ...</b>.</div>
-      <input type="text" id="step5Input" class="stepInput" placeholder="z.B. x = 1">
-      <div class="btnRow">
-        <button data-step="5" class="checkBtn">Zeile 5 prüfen</button>
+      <div class="stepLine">
+        <input type="text" id="step5Left" class="stepInput" placeholder="z.B. x">
+        <span class="eqSign">=</span>
+        <input type="text" id="step5Right" class="stepInput" placeholder="z.B. 1">
+        <button data-step="5" class="checkBtn smallBtn">prüfen</button>
       </div>
       <div id="step5Fb" class="fb"></div>
-    </div>
-
-    <div class="stepRow">
-      <div class="stepTitle">6. Probe</div>
-      <div class="stepHint">Setze x ein und berechne beide Seiten. Schreibe z.B. <code>19 = 19</code>.</div>
-      <input type="text" id="probeInput" class="stepInput" placeholder="z.B. 19 = 19">
-      <div class="btnRow">
-        <button id="probeCheckBtn">Probe prüfen</button>
-      </div>
-      <div id="probeFb" class="fb"></div>
     </div>
 
     <button id="newEqBtn">Neue Gleichung</button>
@@ -168,7 +204,7 @@
       <li><b>x-Glieder auf eine Seite bringen</b><br><span style="font-size:0.9em;">auf die Seite mit größerem x-Koeffizienten.</span></li>
       <li><b>Zahlen auf die andere Seite bringen</b></li>
       <li><b>Nach x auflösen</b></li>
-      <li><b>Probe nicht vergessen!</b></li>
+      <li><b>Probe (im Heft) nicht vergessen!</b></li>
     </ol>
     <p style="font-size:0.85em;color:#555;">
       Du darfst auch Schritte überspringen – jede Zeile wird nur auf
@@ -182,26 +218,36 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const equationEl = document.getElementById("equation");
 
-  const stepInputs = [
-    document.getElementById("step1Input"),
-    document.getElementById("step2Input"),
-    document.getElementById("step3Input"),
-    document.getElementById("step4Input"),
-    document.getElementById("step5Input")
+  const steps = [
+    {
+      left: document.getElementById("step1Left"),
+      right: document.getElementById("step1Right"),
+      fb: document.getElementById("step1Fb")
+    },
+    {
+      left: document.getElementById("step2Left"),
+      right: document.getElementById("step2Right"),
+      fb: document.getElementById("step2Fb")
+    },
+    {
+      left: document.getElementById("step3Left"),
+      right: document.getElementById("step3Right"),
+      fb: document.getElementById("step3Fb")
+    },
+    {
+      left: document.getElementById("step4Left"),
+      right: document.getElementById("step4Right"),
+      fb: document.getElementById("step4Fb")
+    },
+    {
+      left: document.getElementById("step5Left"),
+      right: document.getElementById("step5Right"),
+      fb: document.getElementById("step5Fb")
+    }
   ];
-  const stepFeedbacks = [
-    document.getElementById("step1Fb"),
-    document.getElementById("step2Fb"),
-    document.getElementById("step3Fb"),
-    document.getElementById("step4Fb"),
-    document.getElementById("step5Fb")
-  ];
-  const probeInput = document.getElementById("probeInput");
-  const probeFb = document.getElementById("probeFb");
 
   const checkButtons = document.querySelectorAll(".checkBtn");
   const newEqBtn = document.getElementById("newEqBtn");
-  const probeCheckBtn = document.getElementById("probeCheckBtn");
 
   // --------- Mathe-Hilfsfunktionen ----------
 
@@ -259,11 +305,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // x = Zahl oder Zahl = x
-  function parseSolutionLine(eqStr){
-    const parts = eqStr.replace(/\s+/g,"").split("=");
-    if(parts.length!==2) return null;
-    if(parts[0]==="x" && /^-?\d+$/.test(parts[1])) return parseInt(parts[1],10);
-    if(parts[1]==="x" && /^-?\d+$/.test(parts[0])) return parseInt(parts[0],10);
+  function parseSolutionLineFromParts(leftStr,rightStr){
+    const L = leftStr.replace(/\s+/g,"");
+    const R = rightStr.replace(/\s+/g,"");
+    if(L==="x" && /^-?\d+$/.test(R)) return parseInt(R,10);
+    if(R==="x" && /^-?\d+$/.test(L)) return parseInt(L,10);
     return null;
   }
 
@@ -281,40 +327,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if(isX && seenNumber) return false; // x nach Zahl
     }
     return true;
-  }
-
-  // Probe prüfen (z.B. "19 = 19")
-  function checkProbeString(str, solutionValue, originalEq){
-    const partsOrig = originalEq.split("=");
-    const valSide = sideStr => {
-      let s = normalizeMinus(sideStr).replace(/\s+/g,"");
-      if(s==="") return 0;
-      if(s[0] !== "+" && s[0] !== "-") s = "+"+s;
-      const terms = s.match(/[+\-][^+\-]+/g) || [];
-      let sum = 0;
-      for(const t of terms){
-        const sign = t[0]==="-"?-1:1;
-        const body = t.slice(1);
-        if(body.includes("x")){
-          const coeffStr = body.replace("x","");
-          const coeff = coeffStr===""?1:parseFloat(coeffStr);
-          sum += sign * coeff * solutionValue;
-        }else{
-          const n = parseFloat(body);
-          if(!isNaN(n)) sum += sign * n;
-        }
-      }
-      return sum;
-    };
-    const expectedL = valSide(partsOrig[0]);
-    const expectedR = valSide(partsOrig[1]);
-
-    const userParts = str.replace(/\s+/g,"").split("=");
-    if(userParts.length!==2) return false;
-    const nL = parseFloat(userParts[0]);
-    const nR = parseFloat(userParts[1]);
-    if(isNaN(nL) || isNaN(nR)) return false;
-    return (nL===expectedL && nR===expectedR);
   }
 
   // --------- Aufgabengenerator (unsortierte Terme) ----------
@@ -429,6 +441,11 @@ document.addEventListener("DOMContentLoaded", () => {
     el.className = "fb " + (ok?"ok":"err");
   }
 
+  function clearFb(el){
+    el.textContent="";
+    el.className="fb";
+  }
+
   function newEquation(){
     const gen = generateEquation();
     originalEq = gen.equation;
@@ -438,26 +455,28 @@ document.addEventListener("DOMContentLoaded", () => {
     equationEl.textContent = "Aufgabe:  " + originalEq;
 
     // Felder leeren
-    stepInputs.forEach(inp=>inp.value="");
-    stepFeedbacks.forEach(fb=>{fb.textContent="";fb.className="fb";});
-    probeInput.value="";
-    probeFb.textContent="";
-    probeFb.className="fb";
-    stepInputs[0].focus();
+    steps.forEach(step=>{
+      step.left.value="";
+      step.right.value="";
+      clearFb(step.fb);
+    });
+    steps[0].left.focus();
   }
 
   function checkStep(stepIndex){
-    const input = stepInputs[stepIndex].value.trim();
-    const fb = stepFeedbacks[stepIndex];
+    const step = steps[stepIndex];
+    const left = step.left.value.trim();
+    const right = step.right.value.trim();
+    const fb = step.fb;
 
-    if(!input){
-      setFb(fb,"Bitte gib eine Gleichung in dieser Zeile ein.",false);
+    if(!left || !right){
+      setFb(fb,"Bitte gib linken und rechten Term ein.",false);
       return;
     }
 
     // Schritt 5: Lösung in Form x = ...
     if(stepIndex===4){
-      const sol = parseSolutionLine(input);
+      const sol = parseSolutionLineFromParts(left,right);
       if(sol === null){
         setFb(fb,"Gib die Lösung in der Form x = ... an (z.B. x = 3).",false);
         return;
@@ -471,12 +490,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Schritte 1–4: allgemeine Gleichung prüfen
-    if(!input.includes("=")){
-      setFb(fb,"Bitte eine Gleichung mit '=' eingeben.",false);
-      return;
-    }
+    const userEq = left + " = " + right;
 
-    if(!equivalent(originalEq,input)){
+    if(!equivalent(originalEq,userEq)){
       setFb(fb,"❌ Diese Zeile ist nicht äquivalent zur Ausgangsgleichung. Überprüfe deine Umformung.",false);
       return;
     }
@@ -484,34 +500,15 @@ document.addEventListener("DOMContentLoaded", () => {
     // Spezielle Hinweise für Schritt 1 (Ordnen)
     if(stepIndex===0){
       let hint="";
-      if(/[()]/.test(input)){
+      if(/[()]/.test(userEq)){
         hint+=" Hinweis: Beim Ordnen bitte keine Klammern verwenden, nur Glieder umstellen.";
       }
-      const parts = input.split("=");
-      if(!varsThenNumbers(parts[0]) || !varsThenNumbers(parts[1])){
+      if(!varsThenNumbers(left) || !varsThenNumbers(right)){
         hint+=" Hinweis: Schreibe zuerst alle x-Terme, dann die Zahlen.";
       }
       setFb(fb,"✅ Zeile 1 ist algebraisch richtig."+hint,true);
     }else{
       setFb(fb,`✅ Zeile ${stepIndex+1} ist algebraisch richtig.`,true);
-    }
-  }
-
-  function checkProbe(){
-    const s = probeInput.value.trim();
-    if(!s){
-      setFb(probeFb,"Bitte gib eine Probe ein, z.B. 19 = 19.",false);
-      return;
-    }
-    if(trueSolution===null){
-      setFb(probeFb,"Fehler: Lösung unbekannt.",false);
-      return;
-    }
-    const ok = checkProbeString(s,trueSolution,originalEq);
-    if(ok){
-      setFb(probeFb,"✅ Probe stimmt – Gleichung korrekt gelöst.",true);
-    }else{
-      setFb(probeFb,"❌ Diese Probe passt nicht zur Gleichung bzw. zur Lösung. Rechne die Seiten noch einmal nach.",false);
     }
   }
 
@@ -523,17 +520,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  stepInputs.forEach((inp,idx)=>{
-    inp.addEventListener("keydown",e=>{
-      if(e.key==="Enter") checkStep(idx);
+  // Enter-Taste in den Eingabefeldern
+  steps.forEach((step,idx)=>{
+    [step.left, step.right].forEach(inp=>{
+      inp.addEventListener("keydown",e=>{
+        if(e.key==="Enter") checkStep(idx);
+      });
     });
   });
 
   newEqBtn.addEventListener("click",newEquation);
-  probeCheckBtn.addEventListener("click",checkProbe);
-  probeInput.addEventListener("keydown",e=>{
-    if(e.key==="Enter") checkProbe();
-  });
 
   // Start
   newEquation();
