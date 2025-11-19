@@ -38,18 +38,22 @@
     text-align:left;
   }
 
-  /* --- Ausrichtungs-Fix für Aufgabenzeile --- */
+  /* --- Aufgabenzeile: exakt gleiche Breite, aber schöner Text --- */
   .eqTextLeft,
   .eqTextRight{
     flex:1;
-    min-width:150px;                 /* exakt wie die Eingabefelder */
-    padding:4px 10px;                /* möglichst gleichmäßige Optik */
+    min-width:150px;
+    padding:4px 10px;
     font-size:1.2em;
     font-weight:bold;
-    border:1px solid transparent;    /* gleiche Breite wie Inputs, aber unsichtbar */
+    border:1px solid transparent;
     box-sizing:border-box;
-    font-family:inherit;             /* exakt gleiche Schrift wie bisher */
+    font-family:inherit;
   }
+
+  /* --- Perfekter Ausrichtungs-Fix --- */
+  .eqTextLeft { text-align:right; }
+  .eqTextRight { text-align:left; }
 
   .stepRow{
     margin:12px 0 16px;
@@ -306,7 +310,7 @@ document.addEventListener("DOMContentLoaded", () => {
     stepsBox.innerHTML = "";
     solutionBox.style.display = "none";
 
-    /* --- Aufgabenzeile, perfekt ausgerichtet --- */
+    /* --- Aufgabenzeile --- */
     const eqRow = document.createElement("div");
     eqRow.className = "eqRow";
     eqRow.innerHTML = `
@@ -398,7 +402,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let hasX=false;
 
-    // Schritt 2 (Index 1)
     if(stepIndex===1){
       if(!valStr.includes("x")) return null;
       hasX=true;
@@ -431,7 +434,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const side = (L.cx!==0 ? L : (R.cx!==0 ? R : null));
       if(!side || side.c0===0) return null;
       const del=-side.c0;
-      return {type:(del>0?"+":"-"), val:Math.abs(del), hasX:false};
+      return {type:
+
+(val>0?"+":"-"), val:Math.abs(del), hasX:false};
     }
 
     if(stepIndex===3){
