@@ -21,11 +21,11 @@
     display:flex;
     justify-content:flex-end;
     align-items:center;
+    font-weight:bold;
   }
 
   #counterBox{
     font-size:1em;
-    font-weight:bold;
     color:#333;
   }
 
@@ -38,24 +38,24 @@
     text-align:left;
   }
 
-  /* Aufgabenzeile: gleiche Box wie Inputs, aber ohne sichtbaren Rahmen */
+  /* Aufgabenzeile – exakt ausgerichtet */
   .eqTextLeft,
   .eqTextRight{
     flex:1;
     min-width:150px;
-    padding:8px 10px;          /* wie Inputs */
-    font-size:1.1em;           /* wie Inputs */
+    padding:8px 10px;
+    font-size:1.3em;
     font-weight:bold;
+    font-family:monospace;   /* wichtig */
     border-radius:8px;
     border:1px solid transparent;
     box-sizing:border-box;
-    font-family:monospace;     /* wie Inputs */
   }
   .eqTextLeft{ text-align:right; }
   .eqTextRight{ text-align:left; }
 
   .stepRow{
-    margin:12px 0 16px;
+    margin:12px 0 18px;
   }
 
   .stepTitle{
@@ -68,7 +68,7 @@
   .stepLine{
     display:flex;
     align-items:center;
-    gap:8px;
+    gap:10px;
   }
 
   .stepInputLeft,
@@ -91,28 +91,14 @@
     background:#007bff;
     color:white;
     border:none;
-    padding:8px 10px;
+    padding:8px 12px;
     border-radius:8px;
     cursor:pointer;
     font-size:0.95em;
     white-space:nowrap;
   }
-
   .checkEqBtn:hover, .checkFormBtn:hover{
     background:#0056b3;
-  }
-
-  .formBlock{
-    display:flex;
-    flex-direction:column;
-    align-items:flex-start;
-    gap:2px;
-  }
-
-  .formLine{
-    display:flex;
-    align-items:center;
-    gap:6px;
   }
 
   .eqFormLabel{
@@ -194,11 +180,12 @@ document.addEventListener("DOMContentLoaded", () => {
     str = normalizeMinus(str).replace(/\s+/g,"");
     if(str==="" ) return {cx:0,c0:0};
     if(!["+","-"].includes(str[0])) str = "+"+str;
+
     const terms = str.match(/[+\-][^+\-]+/g) || [];
     let cx=0, c0=0;
 
     for(const t of terms){
-      const sign = t[0]==="-"?-1:1;
+      const sign = t[0]==="-" ? -1 : 1;
       const body=t.slice(1);
 
       if(body.includes("x")){
@@ -351,18 +338,14 @@ document.addEventListener("DOMContentLoaded", () => {
           <button class="checkEqBtn" data-step="${i}">Zeile prüfen</button>
 
           ${hasForm ? `
-            <div class="formBlock">
-              <div class="formLine">
-                <span class="eqFormLabel">|</span>
-                <input type="text" class="eqFormInput" id="F${i}">
-                <button class="checkFormBtn" data-step="${i}">Prüfen</button>
-              </div>
-              <div class="fb" id="fbForm${i}"></div>
-            </div>
+              <span class="eqFormLabel">|</span>
+              <input type="text" class="eqFormInput" id="F${i}">
+              <button class="checkFormBtn" data-step="${i}">Prüfen</button>
           ` : ""}
         </div>
 
         <div class="fb" id="fbEq${i}"></div>
+        ${hasForm ? `<div class="fb" id="fbForm${i}"></div>` : ""}
       `;
       stepsBox.appendChild(row);
     });
