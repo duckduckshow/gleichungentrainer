@@ -38,22 +38,21 @@
     text-align:left;
   }
 
-  /* --- Aufgabenzeile: exakt gleiche Breite, aber schöner Text --- */
+  /* Aufgabenzeile: gleiche Box wie Inputs, aber ohne sichtbaren Rahmen */
   .eqTextLeft,
   .eqTextRight{
     flex:1;
     min-width:150px;
-    padding:4px 10px;
-    font-size:1.2em;
+    padding:8px 10px;          /* wie Inputs */
+    font-size:1.1em;           /* wie Inputs */
     font-weight:bold;
+    border-radius:8px;
     border:1px solid transparent;
     box-sizing:border-box;
-    font-family:inherit;
+    font-family:monospace;     /* wie Inputs */
   }
-
-  /* --- Perfekter Ausrichtungs-Fix --- */
-  .eqTextLeft { text-align:right; }
-  .eqTextRight { text-align:left; }
+  .eqTextLeft{ text-align:right; }
+  .eqTextRight{ text-align:left; }
 
   .stepRow{
     margin:12px 0 16px;
@@ -103,10 +102,22 @@
     background:#0056b3;
   }
 
+  .formBlock{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:2px;
+  }
+
+  .formLine{
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+
   .eqFormLabel{
     font-size:1.3em;
     font-weight:bold;
-    margin-left:6px;
   }
 
   .eqFormInput{
@@ -340,14 +351,18 @@ document.addEventListener("DOMContentLoaded", () => {
           <button class="checkEqBtn" data-step="${i}">Zeile prüfen</button>
 
           ${hasForm ? `
-            <span class="eqFormLabel">|</span>
-            <input type="text" class="eqFormInput" id="F${i}">
-            <button class="checkFormBtn" data-step="${i}">Prüfen</button>
+            <div class="formBlock">
+              <div class="formLine">
+                <span class="eqFormLabel">|</span>
+                <input type="text" class="eqFormInput" id="F${i}">
+                <button class="checkFormBtn" data-step="${i}">Prüfen</button>
+              </div>
+              <div class="fb" id="fbForm${i}"></div>
+            </div>
           ` : ""}
         </div>
 
         <div class="fb" id="fbEq${i}"></div>
-        ${hasForm ? `<div class="fb" id="fbForm${i}"></div>` : ""}
       `;
       stepsBox.appendChild(row);
     });
@@ -434,9 +449,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const side = (L.cx!==0 ? L : (R.cx!==0 ? R : null));
       if(!side || side.c0===0) return null;
       const del=-side.c0;
-      return {type:
-
-(val>0?"+":"-"), val:Math.abs(del), hasX:false};
+      return {type:(del>0?"+":"-"), val:Math.abs(del), hasX:false};
     }
 
     if(stepIndex===3){
