@@ -124,15 +124,15 @@
 
   .formDummy{
     display:flex;
-    width:160px;      /* exakt gleiche Breite wie | F Pruefen */
-    opacity:0;        /* unsichtbar aber nimmt Platz ein */
+    width:160px;   /* gleiche Breite wie | + Feld + Prüfen */
+    opacity:0;     /* unsichtbar, aber blockt Platz */
   }
 
   .fb{
     font-size:0.95em;
     margin-top:4px;
     min-height:1.2em;
-    text-align:right;        /* rechtsbündig wie gewünscht */
+    text-align:right;
   }
 
   .ok{color:#2e7d32;}
@@ -185,7 +185,7 @@
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
-  /* ---------- Mathe ---------- */
+  /* ------------------ Mathe ------------------ */
 
   const normalizeMinus = s => s.replace(/−/g,"-");
 
@@ -226,7 +226,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return -c.b/c.ax;
   }
 
-  /* ---------- Generator ---------- */
+  /* ------------------ Generator ------------------ */
 
   const ri=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
 
@@ -290,7 +290,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  /* ---------- UI ---------- */
+  /* ------------------ UI ------------------ */
 
   const stepsBox=document.getElementById("stepsBox");
   const solutionBox=document.getElementById("solutionBox");
@@ -359,14 +359,14 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  /* ---------- Prüfen ---------- */
+  /* ------------------ Prüfen ------------------ */
 
   function checkEquation(step){
     const L=document.getElementById(`L${step}`).value.trim();
     const R=document.getElementById(`R${step}`).value.trim();
     const fb=document.getElementById(`fbEq${step}`);
 
-    if(!L||!R){
+    if(L === "" || R === ""){
       fb.textContent="Beide Seiten eingeben.";
       fb.className="fb err";
       return;
@@ -393,6 +393,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  /* richtige Interpretation der Umformung */
   function parseUserOp(stepIndex, raw){
     let s=raw.replace(/\s+/g,"");
     if(!s) return null;
@@ -419,72 +420,61 @@ document.addEventListener("DOMContentLoaded", () => {
     return {type,val,hasX};
   }
 
+  /* KORRIGIERTE mathematische Logik */
   function expectedOpForStep(stepIndex, eqStr){
     const [Lstr, Rstr] = eqStr.split("=");
     const L = parseSide(Lstr);
     const R = parseSide(Rstr);
 
-    // ----------------------------------------------------
-    // Schritt 2 (Index 1): x-Glieder zusammenfassen
-    // Regel: Die Seite mit dem KLEINEREN x-Koeffizienten
-    //        wird ausgeglichen (Vergleich MIT Vorzeichen!)
-    // ----------------------------------------------------
+    // Schritt 2: x-Glieder zusammenfassen – Vergleich MIT Vorzeichen!
     if (stepIndex === 1) {
+      if (L.cx === 0 || R.cx === 0) return null;
 
-        // beide Seiten brauchen x-Terme, sonst keine Umformung sinnvoll
-        if (L.cx === 0 || R.cx === 0) return null;
+      let del;
 
-        let del;
+      if (L.cx < R.cx) {
+        del = -L.cx;
+      } else {
+        del = -R.cx;
+      }
 
-        // Linke Seite hat kleineren Koeffizienten (mit Vorzeichenvergleich)
-        if (L.cx < R.cx) {
-            del = -L.cx;   // linke Seite angleichen
-        } 
-        else {
-            del = -R.cx;   // rechte Seite angleichen
-        }
+      if (del === 0) return null;
 
-        if (del === 0) return null;
-
-        return {
-            type: (del > 0 ? "+" : "-"),
-            val: Math.abs(del),
-            hasX: true
-        };
+      return {
+        type: (del > 0 ? "+" : "-"),
+        val: Math.abs(del),
+        hasX: true
+      };
     }
 
-    // ----------------------------------------------------
-    // Schritt 3 (Index 2): Zahlen auf die andere Seite
-    // ----------------------------------------------------
+    // Schritt 3: Zahlen entfernen
     if (stepIndex === 2) {
-        const side = (L.cx !== 0 ? L : (R.cx !== 0 ? R : null));
-        if (!side || side.c0 === 0) return null;
+      const side = (L.cx !== 0 ? L : (R.cx !== 0 ? R : null));
+      if (!side || side.c0 === 0) return null;
 
-        const del = -side.c0;
+      const del = -side.c0;
 
-        return {
-            type: (del > 0 ? "+" : "-"),
-            val: Math.abs(del),
-            hasX: false
-        };
+      return {
+        type: (del > 0 ? "+" : "-"),
+        val: Math.abs(del),
+        hasX: false
+      };
     }
 
-    // ----------------------------------------------------
-    // Schritt 4 (Index 3): Durch x-Koeffizient dividieren
-    // ----------------------------------------------------
+    // Schritt 4: durch Koeffizient dividieren
     if (stepIndex === 3) {
-        const side = (L.cx !== 0 ? L : (R.cx !== 0 ? R : null));
-        if (!side || side.cx === 0) return null;
+      const side = (L.cx !== 0 ? L : (R.cx !== 0 ? R : null));
+      if (!side || side.cx === 0) return null;
 
-        return {
-            type: ":",
-            val: side.cx,
-            hasX: false
-        };
+      return {
+        type: ":",
+        val: side.cx,
+        hasX: false
+      };
     }
 
     return null;
-}
+  }
 
   function opsEqual(a,b){
     if(!a||!b) return false;
@@ -496,7 +486,8 @@ document.addEventListener("DOMContentLoaded", () => {
   function checkForm(step){
     const fb=document.getElementById(`fbForm${step}`);
     const raw=document.getElementById(`F${step}`).value.trim();
-    if(!raw){
+
+    if(raw===""){
       fb.textContent="Bitte eine Umformung eingeben.";
       fb.className="fb err";
       return;
@@ -504,7 +495,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const L=document.getElementById(`L${step}`).value.trim();
     const R=document.getElementById(`R${step}`).value.trim();
-    if(!L||!R){
+
+    if(L === "" || R === ""){
       fb.textContent="Gib zuerst die Gleichung ein.";
       fb.className="fb err";
       return;
@@ -513,7 +505,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const eq=L+" = "+R;
 
     const user=parseUserOp(step,raw);
-    const exp=expectedOp(step,eq);
+    const exp=expectedOpForStep(step,eq);
 
     if(user && exp && opsEqual(user,exp)){
       fb.textContent="Das ist die richtige Umformung!";
@@ -524,18 +516,25 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  /* ---------- Events ---------- */
+  /* ------------------ Events (robust) ------------------ */
 
-  stepsBox.addEventListener("click", e=>{
-    if(e.target.classList.contains("checkEqBtn")){
-      checkEquation(parseInt(e.target.dataset.step,10));
+  stepsBox.addEventListener("click", e => {
+
+    const eqBtn = e.target.closest(".checkEqBtn");
+    if (eqBtn) {
+      checkEquation(parseInt(eqBtn.dataset.step,10));
+      return;
     }
-    if(e.target.classList.contains("checkFormBtn")){
-      checkForm(parseInt(e.target.dataset.step,10));
+
+    const formBtn = e.target.closest(".checkFormBtn");
+    if (formBtn) {
+      checkForm(parseInt(formBtn.dataset.step,10));
+      return;
     }
+
   });
 
-  /* ---------- neue Gleichung ---------- */
+  /* ------------------ neue Gleichung ------------------ */
 
   function newEquation(){
     const g=generateEquation();
@@ -548,7 +547,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   document.getElementById("newEqBtn").addEventListener("click", newEquation);
-
   newEquation();
 
 });
