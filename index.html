@@ -419,32 +419,72 @@ document.addEventListener("DOMContentLoaded", () => {
     return {type,val,hasX};
   }
 
-  function expectedOp(stepIndex, eqStr){
-    const [Ls,Rs]=eqStr.split("=");
-    const L=parseSide(Ls), R=parseSide(Rs);
+  function expectedOpForStep(stepIndex, eqStr){
+    const [Lstr, Rstr] = eqStr.split("=");
+    const L = parseSide(Lstr);
+    const R = parseSide(Rstr);
 
-    if(stepIndex===1){
-      if(L.cx===0 || R.cx===0) return null;
-      const del=(Math.abs(L.cx)<=Math.abs(R.cx) ? -L.cx : -R.cx);
-      if(del===0) return null;
-      return {type:(del>0?"+":"-"), val:Math.abs(del), hasX:true};
+    // ----------------------------------------------------
+    // Schritt 2 (Index 1): x-Glieder zusammenfassen
+    // Regel: Die Seite mit dem KLEINEREN x-Koeffizienten
+    //        wird ausgeglichen (Vergleich MIT Vorzeichen!)
+    // ----------------------------------------------------
+    if (stepIndex === 1) {
+
+        // beide Seiten brauchen x-Terme, sonst keine Umformung sinnvoll
+        if (L.cx === 0 || R.cx === 0) return null;
+
+        let del;
+
+        // Linke Seite hat kleineren Koeffizienten (mit Vorzeichenvergleich)
+        if (L.cx < R.cx) {
+            del = -L.cx;   // linke Seite angleichen
+        } 
+        else {
+            del = -R.cx;   // rechte Seite angleichen
+        }
+
+        if (del === 0) return null;
+
+        return {
+            type: (del > 0 ? "+" : "-"),
+            val: Math.abs(del),
+            hasX: true
+        };
     }
 
-    if(stepIndex===2){
-      const side=(L.cx!==0 ? L : (R.cx!==0?R:null));
-      if(!side || side.c0===0) return null;
-      const del=-side.c0;
-      return {type:(del>0?"+":"-"), val:Math.abs(del), hasX:false};
+    // ----------------------------------------------------
+    // Schritt 3 (Index 2): Zahlen auf die andere Seite
+    // ----------------------------------------------------
+    if (stepIndex === 2) {
+        const side = (L.cx !== 0 ? L : (R.cx !== 0 ? R : null));
+        if (!side || side.c0 === 0) return null;
+
+        const del = -side.c0;
+
+        return {
+            type: (del > 0 ? "+" : "-"),
+            val: Math.abs(del),
+            hasX: false
+        };
     }
 
-    if(stepIndex===3){
-      const side=(L.cx!==0 ? L : (R.cx!==0?R:null));
-      if(!side || side.cx===0) return null;
-      return {type:":", val:side.cx, hasX:false};
+    // ----------------------------------------------------
+    // Schritt 4 (Index 3): Durch x-Koeffizient dividieren
+    // ----------------------------------------------------
+    if (stepIndex === 3) {
+        const side = (L.cx !== 0 ? L : (R.cx !== 0 ? R : null));
+        if (!side || side.cx === 0) return null;
+
+        return {
+            type: ":",
+            val: side.cx,
+            hasX: false
+        };
     }
 
     return null;
-  }
+}
 
   function opsEqual(a,b){
     if(!a||!b) return false;
