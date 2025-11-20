@@ -42,21 +42,21 @@
     margin-bottom:14px;
   }
 
-  /* --- Aufgabenzeile: jetzt deutlich größer --- */
+  /* Aufgabenzeile */
   .eqTextLeft,
   .eqTextRight{
     flex:1;
     padding:10px 15px;
     font-size:1.5em;
     font-weight:bold;
-    font-family:monospace;   /* für perfekte Ausrichtung */
+    font-family:monospace;
     border-radius:8px;
     box-sizing:border-box;
   }
   .eqTextLeft{text-align:right;}
   .eqTextRight{text-align:left;}
 
-  /* --- Schrittblöcke --- */
+  /* Schrittblöcke */
   .stepRow{
     margin:12px 0 18px;
   }
@@ -74,15 +74,23 @@
     gap:8px;
   }
 
+  /* Gleichungsfelder — jetzt ALLE ident breit */
   .stepInputLeft,
   .stepInputRight{
     flex:1;
+    min-width:150px;
     padding:8px 10px;
     font-size:1.15em;
     border-radius:8px;
     border:1px solid #888;
     font-family:monospace;
-    min-width:150px;
+  }
+
+  /* DUMMY-Feld für Zeile 1 und 5 */
+  .formDummy{
+    width:70px;           /* exakt wie eqFormInput */
+    height:0px;
+    opacity:0;
   }
 
   .eqSign{
@@ -119,7 +127,7 @@
     font-family:monospace;
   }
 
-  /* Rückmeldungen direkt unter Eingaben */
+  /* Rückmeldungen */
   .fb{
     font-size:0.95em;
     margin-top:2px;
@@ -128,7 +136,12 @@
   .ok{color:#2e7d32;}
   .err{color:#c62828;}
 
-  /* Untere Leiste */
+  /* NEU für rechtsbündige Umformungs-Kommentare */
+  .formFbWrap{
+    display:flex;
+    justify-content:flex-end;
+  }
+
   #bottomBar{
     max-width:1100px;
     margin:12px auto 0;
@@ -176,44 +189,39 @@
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
-  /* ---------- Mathe-Funktionen ---------- */
-
+  /* MATHE-FUNKTIONEN */
   function normalizeMinus(s){ return s.replace(/−/g,"-"); }
 
   function parseSide(str){
     str = normalizeMinus(str).replace(/\s+/g,"");
     if(str==="") return {cx:0,c0:0};
     if(!["+","-"].includes(str[0])) str = "+"+str;
-
-    const terms = str.match(/[+\-][^+\-]+/g) || [];
-    let cx=0, c0=0;
-
+    const terms=str.match(/[+\-][^+\-]+/g)||[];
+    let cx=0,c0=0;
     for(const t of terms){
-      const sign = t[0]==="-" ? -1 : 1;
-      const body = t.slice(1);
-
+      const sign=t[0]==="-"?-1:1;
+      const body=t.slice(1);
       if(body.includes("x")){
-        let c = body.replace("x","");
+        let c=body.replace("x","");
         if(c==="") c="1";
-        cx += sign * parseFloat(c);
-      } else {
+        cx+=sign*parseFloat(c);
+      }else{
         const n=parseFloat(body);
-        if(!isNaN(n)) c0 += sign*n;
+        if(!isNaN(n)) c0+=sign*n;
       }
     }
     return {cx,c0};
   }
 
   function canonEq(eq){
-    const parts=eq.split("=");
-    const L=parseSide(parts[0]);
-    const R=parseSide(parts[1]);
-    return {ax:L.cx-R.cx, b:L.c0-R.c0};
+    const p=eq.split("=");
+    const L=parseSide(p[0]);
+    const R=parseSide(p[1]);
+    return {ax:L.cx-R.cx,b:L.c0-R.c0};
   }
 
   function equivalent(eq1,eq2){
-    const c1=canonEq(eq1);
-    const c2=canonEq(eq2);
+    const c1=canonEq(eq1), c2=canonEq(eq2);
     return (c1.ax*c2.b === c2.ax*c1.b);
   }
 
@@ -222,71 +230,56 @@ document.addEventListener("DOMContentLoaded", () => {
     return -c.b/c.ax;
   }
 
-  /* ---------- Aufgabengenerator ---------- */
-
+  /* AUFGABEN-GENERATOR */
   function randInt(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
-
   function decompose(k){
     if(k===0) return [];
-    let rest=k;
+    let rest=k, list=[];
     const count=2+Math.floor(Math.random()*2);
-    const list=[];
     for(let i=0;i<count-1;i++){
-      const r=Math.max(1,Math.abs(rest));
-      const v=randInt(-r,r);
+      const v=randInt(-Math.abs(rest),Math.abs(rest));
       list.push(v);
       rest-=v;
     }
     list.push(rest);
     return list.filter(x=>x!==0);
   }
-
   function shuffle(a){
     for(let i=a.length-1;i>0;i--){
       const j=Math.floor(Math.random()*(i+1));
       [a[i],a[j]]=[a[j],a[i]];
     }
   }
-
-  function sideToString(terms){
+  function sideToString(arr){
     let out="",first=true;
-    for(const t of terms){
-      const sign = t.coef>=0?"+":"-";
-      const abs  = Math.abs(t.coef);
-      const piece = t.kind==="x" ? (abs===1?"x":abs+"x") : abs;
-
+    for(const t of arr){
+      const s=t.coef>=0?"+":"-";
+      const abs=Math.abs(t.coef);
+      const text=t.kind==="x"?(abs===1?"x":abs+"x"):abs;
       if(first){
-        out += (sign==="+"?piece:"-"+piece);
+        out+=(s==="+"?text:"-"+text);
         first=false;
       } else {
-        out += " "+sign+" "+piece;
+        out+=" "+s+" "+text;
       }
     }
-    return out || "0";
+    return out||"0";
   }
-
   function generateEquation(){
-    let x0;
-    do{x0=randInt(-5,5);}while(x0===0);
-
-    let A,C;
-    do{A=randInt(-6,6);}while(A===0);
-    do{C=randInt(-6,6);}while(C===0||C===A);
-
+    let x0; do{x0=randInt(-5,5);}while(x0===0);
+    let A; do{A=randInt(-6,6);}while(A===0);
+    let C; do{C=randInt(-6,6);}while(C===0||C===A);
     const B=randInt(-20,20);
     const D=A*x0 + B - C*x0;
-
     const L=[...decompose(A).map(k=>({kind:"x",coef:k})),
              ...decompose(B).map(k=>({kind:"c",coef:k}))];
     const R=[...decompose(C).map(k=>({kind:"x",coef:k})),
              ...decompose(D).map(k=>({kind:"c",coef:k}))];
-
     shuffle(L); shuffle(R);
     return {eq:sideToString(L)+" = "+sideToString(R), solution:x0};
   }
 
-  /* ---------- UI ---------- */
-
+  /* UI */
   const stepsBox=document.getElementById("stepsBox");
   const solutionBox=document.getElementById("solutionBox");
   const counterBox=document.getElementById("counterBox");
@@ -299,31 +292,28 @@ document.addEventListener("DOMContentLoaded", () => {
     "Nach x auflösen"
   ];
 
-  let originalEq="", origLeft="", origRight="";
-  let trueSolution=null;
-  let solvedCurrent=false;
-  let solvedCount=0;
+  let originalEq="", origLeft="", origRight="", trueSolution=null;
+  let solvedCurrent=false, solvedCount=0;
 
   function renderSteps(){
     stepsBox.innerHTML="";
     solutionBox.style.display="none";
 
     /* Aufgabenzeile */
-    const eqRow=document.createElement("div");
-    eqRow.className="eqRow";
-    eqRow.innerHTML=`
+    const eq=document.createElement("div");
+    eq.className="eqRow";
+    eq.innerHTML=`
       <div class="stepLine">
         <span class="eqTextLeft">${origLeft}</span>
         <span class="eqSign">=</span>
         <span class="eqTextRight">${origRight}</span>
       </div>
     `;
-    stepsBox.appendChild(eqRow);
+    stepsBox.appendChild(eq);
 
     /* Schritte */
     stepNames.forEach((name,i)=>{
       const hasForm=(i>=1 && i<=3);
-
       const row=document.createElement("div");
       row.className="stepRow";
 
@@ -334,123 +324,111 @@ document.addEventListener("DOMContentLoaded", () => {
           <input type="text" class="stepInputLeft" id="L${i}" placeholder="linke Seite">
           <span class="eqSign">=</span>
           <input type="text" class="stepInputRight" id="R${i}" placeholder="rechte Seite">
+
           <button class="checkEqBtn" data-step="${i}">Zeile prüfen</button>
 
-          ${hasForm ? `
+          ${hasForm ?
+            `
             <span class="eqFormLabel">|</span>
             <input type="text" class="eqFormInput" id="F${i}">
             <button class="checkFormBtn" data-step="${i}">Prüfen</button>
-          ` : ""}
+            `
+            :
+            `<span class="formDummy"></span>`
+          }
         </div>
 
         <div class="fb" id="fbEq${i}"></div>
-        ${hasForm ? `<div class="fb" id="fbForm${i}"></div>` : ""}
+
+        ${hasForm ?
+          `<div class="formFbWrap"><div class="fb" id="fbForm${i}"></div></div>`
+          : ``
+        }
       `;
+
       stepsBox.appendChild(row);
     });
   }
 
-  /* ---------- Gleichungsprüfung ---------- */
-
+  /* Gleichungsprüfung */
   function checkEquation(step){
     const L=document.getElementById(`L${step}`).value.trim();
     const R=document.getElementById(`R${step}`).value.trim();
     const fb=document.getElementById(`fbEq${step}`);
-
-    if(!L || !R){
+    if(!L||!R){
       fb.textContent="Beide Seiten eingeben.";
       fb.className="fb err";
       return;
     }
-
-    const eq=L+" = "+R;
-
-    if(equivalent(originalEq,eq)){
+    if(equivalent(originalEq,L+" = "+R)){
       fb.textContent="✔ äquivalent zur Ausgangsgleichung.";
       fb.className="fb ok";
-
       if(step===4 && !solvedCurrent){
         solvedCurrent=true;
-        solvedCount+=1;
+        solvedCount++;
         counterBox.textContent="Gelöst: "+solvedCount;
-
         solutionBox.style.display="block";
         solutionBox.textContent=`L = { ${trueSolution} }`;
       }
-
     } else {
       fb.textContent="✘ nicht äquivalent zur Ausgangsgleichung.";
       fb.className="fb err";
     }
   }
 
-  /* ---------- Umformung ---------- */
-
-  function parseUserOp(stepIndex, raw){
+  /* Umformungs-Prüfung */
+  function parseUserOp(stepIndex,raw){
     let s=raw.replace(/\s+/g,"");
     if(!s) return null;
+    const t=s[0], valStrRaw=s.slice(1);
+    if(!"+-*/:".includes(t)) return null;
 
-    const type=s[0];
-    let valStr=s.slice(1);
-
-    if(!"+-*/:".includes(type)) return null;
-
-    let hasX=false;
-
+    let valStr=valStrRaw, hasX=false;
     if(stepIndex===1){
       if(!valStr.includes("x")) return null;
       hasX=true;
       valStr=valStr.replace("x","");
       if(valStr==="") valStr="1";
       if(valStr==="+"||valStr==="-") valStr+="1";
-    } else {
+    }else{
       if(valStr.includes("x")) return null;
     }
 
-    const val=parseFloat(valStr);
-    if(isNaN(val) || val===0) return null;
+    const v=parseFloat(valStr);
+    if(isNaN(v)||v===0) return null;
 
-    return {type,val,hasX};
+    return {type:t, val:v, hasX};
   }
+  function expectedOpForStep(i,eq){
+    const[L,R]=eq.split("=");
+    const l=parseSide(L), r=parseSide(R);
 
-  function expectedOpForStep(stepIndex, eqStr){
-    const [Lstr,Rstr]=eqStr.split("=");
-    const L=parseSide(Lstr), R=parseSide(Rstr);
-
-    if(stepIndex===1){
-      if(L.cx===0 || R.cx===0) return null;
-      const del = (Math.abs(L.cx)<=Math.abs(R.cx)? -L.cx : -R.cx);
-      if(del===0) return null;
+    if(i===1){
+      if(l.cx===0||r.cx===0) return null;
+      const del=(Math.abs(l.cx)<=Math.abs(r.cx)? -l.cx : -r.cx);
       return {type:(del>0?"+":"-"), val:Math.abs(del), hasX:true};
     }
-
-    if(stepIndex===2){
-      const side=(L.cx!==0 ? L : (R.cx!==0 ? R : null));
-      if(!side || side.c0===0) return null;
-      const del=-side.c0;
-      return {type:(del>0?"+":"-"),val:Math.abs(del),hasX:false};
+    if(i===2){
+      const s=l.cx!==0?l:(r.cx!==0?r:null);
+      if(!s||s.c0===0) return null;
+      const del=-s.c0;
+      return {type:(del>0?"+":"-"), val:Math.abs(del), hasX:false};
     }
-
-    if(stepIndex===3){
-      const side=(L.cx!==0 ? L : (R.cx!==0 ? R : null));
-      if(!side||side.cx===0) return null;
-      return {type:":", val:side.cx, hasX:false};
+    if(i===3){
+      const s=l.cx!==0?l:(r.cx!==0?r:null);
+      if(!s) return null;
+      return {type:":", val:s.cx, hasX:false};
     }
-
     return null;
   }
-
   function opsEqual(u,e){
-    if(!u || !e) return false;
-    const ut = (u.type==="/" ? ":" : u.type);
-    const et = (e.type==="/" ? ":" : e.type);
-    return (ut===et && u.hasX===e.hasX && Math.abs(u.val-e.val)<1e-9);
+    const ut=(u.type==="/" ? ":" : u.type);
+    const et=(e.type==="/" ? ":" : e.type);
+    return ut===et && u.hasX===e.hasX && Math.abs(u.val-e.val)<1e-9;
   }
-
   function checkForm(step){
     const fb=document.getElementById(`fbForm${step}`);
     const raw=document.getElementById(`F${step}`).value.trim();
-
     if(!raw){
       fb.textContent="Bitte eine Umformung eingeben.";
       fb.className="fb err";
@@ -459,30 +437,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const L=document.getElementById(`L${step}`).value.trim();
     const R=document.getElementById(`R${step}`).value.trim();
-
     if(!L||!R){
-      fb.textContent="Gib zuerst die Gleichung in dieser Zeile ein.";
+      fb.textContent="Gib zuerst die Gleichung ein.";
       fb.className="fb err";
       return;
     }
 
     const eq=L+" = "+R;
-
-    const user=parseUserOp(step,raw);
-    if(!user){
+    const u=parseUserOp(step,raw);
+    if(!u){
       fb.textContent="Das ist nicht die richtige Umformung für den nächsten Schritt!";
       fb.className="fb err";
       return;
     }
 
-    const expected=expectedOpForStep(step,eq);
-    if(!expected){
+    const e=expectedOpForStep(step,eq);
+    if(!e){
       fb.textContent="Das ist nicht die richtige Umformung für den nächsten Schritt!";
       fb.className="fb err";
       return;
     }
 
-    if(opsEqual(user,expected)){
+    if(opsEqual(u,e)){
       fb.textContent="Das ist die richtige Umformung!";
       fb.className="fb ok";
     } else {
@@ -491,33 +467,27 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  /* ---------- Events ---------- */
-  stepsBox.addEventListener("click", e=>{
-    if(e.target.classList.contains("checkEqBtn")){
-      checkEquation(parseInt(e.target.dataset.step,10));
-    }
-    if(e.target.classList.contains("checkFormBtn")){
-      checkForm(parseInt(e.target.dataset.step,10));
-    }
+  /* Events */
+  stepsBox.addEventListener("click",e=>{
+    if(e.target.classList.contains("checkEqBtn")) checkEquation(+e.target.dataset.step);
+    if(e.target.classList.contains("checkFormBtn")) checkForm(+e.target.dataset.step);
   });
 
-  /* ---------- Neue Gleichung ---------- */
+  /* Neue Gleichung */
   function newEquation(){
     const g=generateEquation();
     originalEq=g.eq;
-    const p=originalEq.split("=");
-    origLeft=p[0].trim();
-    origRight=p[1].trim();
-    trueSolution=solveCanon(canonEq(originalEq));
+    const parts=g.eq.split("=");
+    origLeft=parts[0].trim();
+    origRight=parts[1].trim();
+    trueSolution=solveCanon(canonEq(g.eq));
     solvedCurrent=false;
     solutionBox.style.display="none";
     renderSteps();
   }
+  document.getElementById("newEqBtn").addEventListener("click",newEquation);
 
-  document.getElementById("newEqBtn").addEventListener("click", newEquation);
-
-  newEquation(); // Start
-
+  newEquation();
 });
 </script>
 
