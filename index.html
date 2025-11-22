@@ -79,7 +79,7 @@
   }
 
   .opInput{
-    width:90px;
+    width:140px;
     padding:6px 8px;
     font-size:1.05em;
     border-radius:8px;
@@ -89,7 +89,7 @@
 
   .solutionInput{
     flex:1;
-    max-width:260px;
+    max-width:200px;
     padding:6px 8px;
     font-size:1.05em;
     border-radius:8px;
@@ -124,10 +124,15 @@
   /* ---------- Level 1 Layout ---------- */
 
   .eqTextL1{
-    flex:1;
     font-family:monospace;
     font-size:1.4em;
     font-weight:bold;
+    flex:0 1 auto;
+    margin-right:4px;
+  }
+
+  .lineL1{
+    gap:4px;
   }
 
   .eqSign{
@@ -203,7 +208,7 @@
 <div id="level1Box" class="trainerBox">
 
   <div class="rowLabel">1. Umformungsschritt</div>
-  <div class="line">
+  <div class="line lineL1">
     <span id="equationTextL1" class="eqTextL1">Lade Gleichung …</span>
     <span class="eqFormLabel">|</span>
     <input type="text" id="opInputL1" class="opInput" placeholder="+5, -3, :4, *3 …">
@@ -292,7 +297,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const solCheckBtnL2 = document.getElementById("solCheckBtnL2");
   const solutionSet   = document.getElementById("solutionSet");
 
-  /* ---------- Fortschrittsbalken & Level ---------- */
+  /* ---------- Level/Progress ---------- */
 
   const TOTAL_ROUNDS = 10;
   const MAX_LEVEL = 2;
@@ -300,8 +305,10 @@ document.addEventListener("DOMContentLoaded", () => {
   let level = 1;
   let round = 1;
   let score = 0;
-  let taskFinished = false;  // diese Aufgabe schon bewertet?
-  let readyForNext = false;  // darf "Neue Aufgabe" ausgelöst werden?
+
+  // pro Aufgabe:
+  let hasSolutionCheck = false;
+  let lastSolutionCorrect = false;
 
   const segments = [];
 
@@ -326,34 +333,31 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function finishTask(correct){
-    if(taskFinished) return;
-    taskFinished = true;
-    readyForNext = true;
+  function applyProgressForCurrentTask(){
+    const idx = round - 1;
+    const seg = segments[idx];
+    if(!seg) return;
 
-    const seg = segments[round-1];
-    if(seg){
-      seg.style.backgroundColor = correct ? "#4caf50" : "#d9534f";
-    }
-    if(correct) score++;
-
-    updateScoreLabel();
-
-    if(round >= TOTAL_ROUNDS){
-      if(level < MAX_LEVEL){
-        alert(`Level ${level} beendet.\nPunkte: ${score} von ${TOTAL_ROUNDS}.\nKlicke „Neue Aufgabe“, um Level ${level+1} zu starten.`);
-      }else{
-        alert(`Alle Levels abgeschlossen!\nPunkte in Level 2: ${score} von ${TOTAL_ROUNDS}.\nKlicke „Neue Aufgabe“, um wieder bei Level 1 zu beginnen.`);
-      }
+    if(lastSolutionCorrect){
+      seg.style.backgroundColor = "#4caf50";
+      // Punkt nur einmal zählen
+      score++;
+    }else{
+      seg.style.backgroundColor = "#d9534f";
     }
   }
 
-  function startLevel(lvl){
-    level = lvl;
+  function switchToNextLevelOrRestart(){
+    if(level < MAX_LEVEL){
+      alert(`Level ${level} beendet.\nPunkte: ${score} von ${TOTAL_ROUNDS}.\nWeiter mit Level ${level+1}.`);
+      level++;
+    }else{
+      alert(`Level ${level} beendet.\nPunkte: ${score} von ${TOTAL_ROUNDS}.\nEs geht wieder mit Level 1 los.`);
+      level = 1;
+    }
+
     round = 1;
     score = 0;
-    taskFinished = false;
-    readyForNext = false;
     initProgressBar();
     updateScoreLabel();
 
@@ -364,6 +368,7 @@ document.addEventListener("DOMContentLoaded", () => {
       level1Box.style.display = "none";
       level2Box.style.display = "block";
     }
+
     newTaskForCurrentLevel();
   }
 
@@ -442,7 +447,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const eqText = `${lhs} = ${rhs}`;
-    return {kind,a,solution,eqText,expectedOp};
+    return {kind,a,solution:eqTextSolution(solution),numericSolution:solution,eqText,expectedOp};
+
+    function eqTextSolution(sol){ return sol; } // Platzhalter für evtl. spätere Format-Änderungen
   }
 
   function parseOpL1(str){
@@ -478,9 +485,9 @@ document.addEventListener("DOMContentLoaded", () => {
     solFbL1.className = "fb";
 
     lastOpCorrectL1 = false;
-    taskFinished = false;
-    readyForNext = false;
-    solutionSet.style.visibility = "hidden"; // betrifft nur Level 2, schadet aber nicht
+    hasSolutionCheck = false;
+    lastSolutionCorrect = false;
+    solutionSet.style.visibility = "hidden"; // betrifft Level 2, schadet aber nicht
 
     opInputL1.focus();
   }
@@ -512,19 +519,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     const val = parseSolutionValue(solInputL1.value);
     if(val === null){
-      setFb(solFbL1,"Bitte eine Lösung in der Form x = Zahl eingeben (hier nur Zahl).",false);
+      setFb(solFbL1,"Bitte nur die Zahl für x eingeben.",false);
       return;
     }
-    const correct = (val === currentEqL1.solution);
+    const correct = (val === currentEqL1.numericSolution);
+    hasSolutionCheck = true;
+    lastSolutionCorrect = correct;
+
     if(correct){
       setFb(solFbL1,"Lösung korrekt!",true);
     }else{
       setFb(solFbL1,"Diese Lösung ist nicht korrekt.",false);
-    }
-
-    if(!taskFinished){
-      const overallCorrect = (correct && lastOpCorrectL1);
-      finishTask(overallCorrect);
     }
   }
 
@@ -532,12 +537,12 @@ document.addEventListener("DOMContentLoaded", () => {
      LEVEL 2 – lineare Gleichungen mit inhaltlicher Prüfung
      ========================================================= */
 
-  let currentEqL2 = null;  // {equation, solution}
+  let currentEqL2Obj = null;  // {equation, solution}
 
-  function normalizeMinus(s){ return s.replace(/−/g,"-"); }
+  function normalizeMinus2(s){ return s.replace(/−/g,"-"); }
 
   function parseSide(str){
-    str = normalizeMinus(str).replace(/\s+/g,"");
+    str = normalizeMinus2(str).replace(/\s+/g,"");
     if(str==="") return {cx:0,c0:0};
     if(!["+","-"].includes(str[0])) str = "+"+str;
     const terms = str.match(/[+\-][^+\-]+/g) || [];
@@ -659,6 +664,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const hasLx = (L.cx !== 0);
     const hasRx = (R.cx !== 0);
 
+    // x-Terme auf eine Seite
     if(hasLx && hasRx){
       let del;
       if(L.cx < R.cx){
@@ -674,6 +680,7 @@ document.addEventListener("DOMContentLoaded", () => {
       };
     }
 
+    // Zahlen auf die andere Seite
     if(hasLx || hasRx){
       const side = hasLx ? L : R;
       if(side.c0 !== 0){
@@ -686,6 +693,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
+    // Division durch x-Koeffizient
     const side = hasLx ? L : (hasRx ? R : null);
     if(side && side.cx !== 0 && side.c0 === 0){
       return {
@@ -720,7 +728,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   let lastOpCorrectL2 = false;
-  let currentEqL2Obj = null;
 
   function newTaskL2(){
     currentEqL2Obj = generateEquationL2();
@@ -736,8 +743,8 @@ document.addEventListener("DOMContentLoaded", () => {
     solutionSet.textContent = "L = { ? }";
 
     lastOpCorrectL2 = false;
-    taskFinished = false;
-    readyForNext = false;
+    hasSolutionCheck = false;
+    lastSolutionCorrect = false;
 
     opInputL2.focus();
   }
@@ -778,21 +785,19 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     const val = parseSolutionValue(solInputL2.value);
     if(val === null){
-      setFb(solFbL2,"Bitte eine Lösung in der Form x = Zahl eingeben.",false);
+      setFb(solFbL2,"Bitte eine Lösung in der Form x = Zahl eingeben (hier reicht die Zahl).",false);
       return;
     }
     const correct = (val === currentEqL2Obj.solution);
+    hasSolutionCheck = true;
+    lastSolutionCorrect = correct;
+
     if(correct){
       setFb(solFbL2,"Lösung korrekt!",true);
       solutionSet.style.visibility = "visible";
       solutionSet.textContent = `L = { ${currentEqL2Obj.solution} }`;
     }else{
       setFb(solFbL2,"Diese Lösung ist nicht korrekt.",false);
-    }
-
-    if(!taskFinished){
-      const overallCorrect = (correct && lastOpCorrectL2);
-      finishTask(overallCorrect);
     }
   }
 
@@ -807,21 +812,19 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   nextBtn.addEventListener("click", () => {
-    if(!readyForNext){
+    if(!hasSolutionCheck){
       alert("Bitte prüfe zuerst deine Lösung, bevor du zur nächsten Aufgabe gehst.");
       return;
     }
 
+    // Fortschrittsbalken für aktuelle Aufgabe aktualisieren
+    applyProgressForCurrentTask();
+    updateScoreLabel();
+
     if(round >= TOTAL_ROUNDS){
-      if(level < MAX_LEVEL){
-        startLevel(level+1);
-      }else{
-        startLevel(1);
-      }
+      switchToNextLevelOrRestart();
     }else{
       round++;
-      taskFinished = false;
-      readyForNext = false;
       updateScoreLabel();
       newTaskForCurrentLevel();
     }
@@ -841,8 +844,15 @@ document.addEventListener("DOMContentLoaded", () => {
   opInputL2.addEventListener("keydown", e=>{ if(e.key==="Enter") checkOpLevel2(); });
   solInputL2.addEventListener("keydown", e=>{ if(e.key==="Enter") checkSolutionLevel2(); });
 
-  /* ---------- Start ---------- */
-  startLevel(1);
+  /* ---------- Start: immer bei Level 1 ---------- */
+  initProgressBar();
+  level = 1;
+  round = 1;
+  score = 0;
+  updateScoreLabel();
+  level1Box.style.display = "block";
+  level2Box.style.display = "none";
+  newTaskForCurrentLevel();
 
 });
 </script>
