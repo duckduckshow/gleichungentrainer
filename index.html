@@ -121,14 +121,23 @@
   .ok{color:#2e7d32;}
   .err{color:#c62828;}
 
-  /* ---------- Level 1 ---------- */
+  /* ---------- Level 1 Layout ---------- */
 
-  #level1Box #equationRow{
-    text-align:center;
+  .eqTextL1{
+    flex:1;
     font-family:monospace;
-    font-size:1.5em;
+    font-size:1.4em;
     font-weight:bold;
-    margin-bottom:16px;
+  }
+
+  .eqSign{
+    font-size:1.4em;
+    font-weight:bold;
+  }
+
+  .eqSolLeft{
+    font-family:monospace;
+    font-size:1.2em;
   }
 
   /* ---------- Level 2 ---------- */
@@ -162,6 +171,25 @@
     color:#555;
     margin-top:32px;
   }
+
+  #nextWrapper{
+    margin-top:10px;
+    text-align:center;
+  }
+
+  #nextBtn{
+    padding:10px 22px;
+    font-size:1.05em;
+    border:none;
+    background:#007bff;
+    color:white;
+    border-radius:10px;
+    cursor:pointer;
+  }
+
+  #nextBtn:hover{
+    background:#0056b3;
+  }
 </style>
 </head>
 <body>
@@ -173,22 +201,22 @@
 
 <!-- ---------- Level 1 UI ---------- -->
 <div id="level1Box" class="trainerBox">
-  <div id="equationRow">Lade Gleichung …</div>
 
-  <div>
-    <div class="rowLabel">1. Umformungsschritt</div>
-    <div class="line">
-      <span class="eqFormLabel">|</span>
-      <input type="text" id="opInputL1" class="opInput" placeholder="+5, -3, :4, *3 …">
-      <button id="opCheckBtnL1" class="checkBtn">Umformung prüfen</button>
-    </div>
-    <div id="opFbL1" class="fb"></div>
+  <div class="rowLabel">1. Umformungsschritt</div>
+  <div class="line">
+    <span id="equationTextL1" class="eqTextL1">Lade Gleichung …</span>
+    <span class="eqFormLabel">|</span>
+    <input type="text" id="opInputL1" class="opInput" placeholder="+5, -3, :4, *3 …">
+    <button id="opCheckBtnL1" class="checkBtn">Umformung prüfen</button>
   </div>
+  <div id="opFbL1" class="fb"></div>
 
   <div>
-    <div class="rowLabel">2. Lösungszeile (z.B. x = 3)</div>
+    <div class="rowLabel">2. Lösungszeile</div>
     <div class="line">
-      <input type="text" id="solInputL1" class="solutionInput" placeholder="x = …">
+      <span class="eqSolLeft">x</span>
+      <span class="eqSign">=</span>
+      <input type="text" id="solInputL1" class="solutionInput" placeholder="Zahl">
       <button id="solCheckBtnL1" class="checkBtn">Lösung prüfen</button>
     </div>
     <div id="solFbL1" class="fb"></div>
@@ -223,6 +251,10 @@
   <div id="solutionSet">L = { ? }</div>
 </div>
 
+<div id="nextWrapper">
+  <button id="nextBtn">Neue Aufgabe</button>
+</div>
+
 <p id="footerNote">
 Diese Seite speichert keine persönlichen Daten und läuft vollständig lokal im Browser.<br>
 © 2025 Gleichungstrainer mit Levelsystem
@@ -239,13 +271,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const level1Box = document.getElementById("level1Box");
   const level2Box = document.getElementById("level2Box");
+  const nextBtn   = document.getElementById("nextBtn");
 
   // Level 1
-  const eqRowL1     = document.getElementById("equationRow");
-  const opInputL1   = document.getElementById("opInputL1");
-  const opFbL1      = document.getElementById("opFbL1");
-  const solInputL1  = document.getElementById("solInputL1");
-  const solFbL1     = document.getElementById("solFbL1");
+  const eqTextL1   = document.getElementById("equationTextL1");
+  const opInputL1  = document.getElementById("opInputL1");
+  const opFbL1     = document.getElementById("opFbL1");
+  const solInputL1 = document.getElementById("solInputL1");
+  const solFbL1    = document.getElementById("solFbL1");
   const opCheckBtnL1  = document.getElementById("opCheckBtnL1");
   const solCheckBtnL1 = document.getElementById("solCheckBtnL1");
 
@@ -267,7 +300,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let level = 1;
   let round = 1;
   let score = 0;
-  let taskFinished = false;  // ob diese Aufgabe schon bewertet wurde
+  let taskFinished = false;  // diese Aufgabe schon bewertet?
+  let readyForNext = false;  // darf "Neue Aufgabe" ausgelöst werden?
 
   const segments = [];
 
@@ -295,6 +329,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function finishTask(correct){
     if(taskFinished) return;
     taskFinished = true;
+    readyForNext = true;
 
     const seg = segments[round-1];
     if(seg){
@@ -302,24 +337,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if(correct) score++;
 
+    updateScoreLabel();
+
     if(round >= TOTAL_ROUNDS){
       if(level < MAX_LEVEL){
-        setTimeout(()=>{
-          alert(`Level ${level} beendet.\nPunkte: ${score} von ${TOTAL_ROUNDS}\nWeiter mit Level ${level+1}.`);
-          startLevel(level+1);
-        },50);
+        alert(`Level ${level} beendet.\nPunkte: ${score} von ${TOTAL_ROUNDS}.\nKlicke „Neue Aufgabe“, um Level ${level+1} zu starten.`);
       }else{
-        setTimeout(()=>{
-          alert(`Alle Levels abgeschlossen!\nPunkte in Level 2: ${score} von ${TOTAL_ROUNDS}.\nLevel 1 beginnt wieder von vorne.`);
-          startLevel(1);
-        },50);
+        alert(`Alle Levels abgeschlossen!\nPunkte in Level 2: ${score} von ${TOTAL_ROUNDS}.\nKlicke „Neue Aufgabe“, um wieder bei Level 1 zu beginnen.`);
       }
-    }else{
-      round++;
-      updateScoreLabel();
-      setTimeout(()=>{
-        newTaskForCurrentLevel();
-      },150);
     }
   }
 
@@ -328,6 +353,7 @@ document.addEventListener("DOMContentLoaded", () => {
     round = 1;
     score = 0;
     taskFinished = false;
+    readyForNext = false;
     initProgressBar();
     updateScoreLabel();
 
@@ -341,7 +367,7 @@ document.addEventListener("DOMContentLoaded", () => {
     newTaskForCurrentLevel();
   }
 
-  /* ---------- Allgemeine Helper ---------- */
+  /* ---------- Helper ---------- */
 
   function setFb(el,text,isOk){
     el.textContent = text;
@@ -372,13 +398,12 @@ document.addEventListener("DOMContentLoaded", () => {
      LEVEL 1 – einfache Gleichungen (4 Grundformen)
      ========================================================= */
 
-  // Typen:
   // A: x + a = b   oder   a + x = b    → -a
   // B: x - a = b                      → +a
   // C: x·a = b   oder   a·x = b       → :a
   // D: x / a = b   oder x : a = b     → *a
 
-  let currentEqL1 = null;   // { kind, a, solution, text, expectedOp }
+  let currentEqL1 = null;   // { kind, a, solution, eqText, expectedOp }
 
   function generateEquationL1(){
     const kinds = ["add","sub","mult","div"];
@@ -443,7 +468,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function newTaskL1(){
     currentEqL1 = generateEquationL1();
-    eqRowL1.textContent = currentEqL1.eqText;
+    eqTextL1.textContent = currentEqL1.eqText;
 
     opInputL1.value = "";
     solInputL1.value = "";
@@ -454,7 +479,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     lastOpCorrectL1 = false;
     taskFinished = false;
-    solutionSet.style.visibility = "hidden";
+    readyForNext = false;
+    solutionSet.style.visibility = "hidden"; // betrifft nur Level 2, schadet aber nicht
 
     opInputL1.focus();
   }
@@ -486,7 +512,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     const val = parseSolutionValue(solInputL1.value);
     if(val === null){
-      setFb(solFbL1,"Bitte eine Lösung in der Form x = Zahl eingeben.",false);
+      setFb(solFbL1,"Bitte eine Lösung in der Form x = Zahl eingeben (hier nur Zahl).",false);
       return;
     }
     const correct = (val === currentEqL1.solution);
@@ -505,13 +531,6 @@ document.addEventListener("DOMContentLoaded", () => {
   /* =========================================================
      LEVEL 2 – lineare Gleichungen mit inhaltlicher Prüfung
      ========================================================= */
-
-  // Wir erzeugen Gleichungen, deren "richtiger nächster Schritt"
-  // entweder:
-  //  - x-Terme auf eine Seite (Stufe 1)
-  //  - Zahlen auf die andere Seite (Stufe 2)
-  //  - durch x-Koeffizienten dividieren (Stufe 3)
-  // ist. Die Logik ist wie im großen Trainer, aber auf einen Schritt reduziert.
 
   let currentEqL2 = null;  // {equation, solution}
 
@@ -551,9 +570,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function formatLinear(coeff, constant){
-    // coeff x + constant
     let left = "";
-    // x-Teil
     if(coeff === 1){
       left += "x";
     }else if(coeff === -1){
@@ -561,7 +578,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }else{
       left += coeff+"x";
     }
-    // Konstante
     if(constant > 0){
       left += " + " + constant;
     }else if(constant < 0){
@@ -578,11 +594,9 @@ document.addEventListener("DOMContentLoaded", () => {
     do{A = randInt(-6,6);}while(A===0);
 
     const stage = randInt(1,3); // 1: x-Terme, 2: Zahlen, 3: Division
-
     let equation;
 
     if(stage === 1){
-      // A x + B = C x + D
       let C;
       do{C = randInt(-6,6);}while(C===0 || C===A);
       const B = randInt(-10,10);
@@ -591,14 +605,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const right = formatLinear(C,D);
       equation = `${left} = ${right}`;
     }else if(stage === 2){
-      // A x + B = D   (x nur auf einer Seite, aber Konstante dort ≠ 0)
       const B = randInt(-10,10) || 3;
       const D = A*x0 + B;
       const left = formatLinear(A,B);
       const right = String(D);
       equation = `${left} = ${right}`;
     }else{
-      // A x = D  (nur x auf einer Seite → durch A dividieren)
       const D = A * x0;
       let left;
       if(A === 1){
@@ -615,7 +627,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return {equation, solution:x0};
   }
 
-  // Umformung parsen (wie im großen Trainer)
   function parseUserOpL2(raw){
     let s = normalizeOpString(raw);
     if(!s) return null;
@@ -648,9 +659,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const hasLx = (L.cx !== 0);
     const hasRx = (R.cx !== 0);
 
-    // Stufe 1: x-Terme auf eine Seite (beide Seiten haben x)
     if(hasLx && hasRx){
-      // Seite mit kleinerem Koeffizienten "wegmachen"
       let del;
       if(L.cx < R.cx){
         del = -L.cx;
@@ -665,7 +674,6 @@ document.addEventListener("DOMContentLoaded", () => {
       };
     }
 
-    // Stufe 2: Zahlen auf die andere Seite
     if(hasLx || hasRx){
       const side = hasLx ? L : R;
       if(side.c0 !== 0){
@@ -678,12 +686,11 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    // Stufe 3: durch Koeffizient von x dividieren
     const side = hasLx ? L : (hasRx ? R : null);
     if(side && side.cx !== 0 && side.c0 === 0){
       return {
         type: ":",
-        val: side.cx,   // Vorzeichen wichtig!
+        val: side.cx,
         hasX: false
       };
     }
@@ -701,12 +708,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if(ut !== et) return false;
     if(user.hasX !== expected.hasX) return false;
 
-    // bei + / - & Zahlen: val ohne Vorzeichenvergleich
     if(ut === "+" || ut === "-"){
       return Math.abs(user.val - expected.val) < 1e-9;
     }
 
-    // bei Division: Vorzeichen MUSS stimmen
     if(ut === ":"){
       return Math.abs(user.val - expected.val) < 1e-9;
     }
@@ -715,10 +720,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   let lastOpCorrectL2 = false;
+  let currentEqL2Obj = null;
 
   function newTaskL2(){
-    currentEqL2 = generateEquationL2();
-    equationL2.textContent = currentEqL2.equation;
+    currentEqL2Obj = generateEquationL2();
+    equationL2.textContent = currentEqL2Obj.equation;
 
     opInputL2.value = "";
     solInputL2.value = "";
@@ -731,12 +737,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     lastOpCorrectL2 = false;
     taskFinished = false;
+    readyForNext = false;
 
     opInputL2.focus();
   }
 
   function checkOpLevel2(){
-    if(!currentEqL2){
+    if(!currentEqL2Obj){
       setFb(opFbL2,"Keine Aufgabe geladen.",false);
       return;
     }
@@ -748,7 +755,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const exp = expectedOpForEquation(currentEqL2.equation);
+    const exp = expectedOpForEquation(currentEqL2Obj.equation);
     if(!exp){
       setFb(opFbL2,"Für diese Gleichung kann ich keine passende Umformung erkennen.",false);
       lastOpCorrectL2 = false;
@@ -765,7 +772,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function checkSolutionLevel2(){
-    if(!currentEqL2){
+    if(!currentEqL2Obj){
       setFb(solFbL2,"Keine Aufgabe geladen.",false);
       return;
     }
@@ -774,11 +781,11 @@ document.addEventListener("DOMContentLoaded", () => {
       setFb(solFbL2,"Bitte eine Lösung in der Form x = Zahl eingeben.",false);
       return;
     }
-    const correct = (val === currentEqL2.solution);
+    const correct = (val === currentEqL2Obj.solution);
     if(correct){
       setFb(solFbL2,"Lösung korrekt!",true);
       solutionSet.style.visibility = "visible";
-      solutionSet.textContent = `L = { ${currentEqL2.solution} }`;
+      solutionSet.textContent = `L = { ${currentEqL2Obj.solution} }`;
     }else{
       setFb(solFbL2,"Diese Lösung ist nicht korrekt.",false);
     }
@@ -798,6 +805,27 @@ document.addEventListener("DOMContentLoaded", () => {
       newTaskL2();
     }
   }
+
+  nextBtn.addEventListener("click", () => {
+    if(!readyForNext){
+      alert("Bitte prüfe zuerst deine Lösung, bevor du zur nächsten Aufgabe gehst.");
+      return;
+    }
+
+    if(round >= TOTAL_ROUNDS){
+      if(level < MAX_LEVEL){
+        startLevel(level+1);
+      }else{
+        startLevel(1);
+      }
+    }else{
+      round++;
+      taskFinished = false;
+      readyForNext = false;
+      updateScoreLabel();
+      newTaskForCurrentLevel();
+    }
+  });
 
   /* ---------- Events ---------- */
 
@@ -821,4 +849,3 @@ document.addEventListener("DOMContentLoaded", () => {
 
 </body>
 </html>
-
