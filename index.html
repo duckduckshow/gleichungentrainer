@@ -111,9 +111,11 @@
     margin-right:4px;
   }
 
-  .lineL1{
+.lineL1{
     gap:4px;
-  }
+    margin-top:6px;   /* Abstand zur Zeile darüber */
+}
+
 
   .eqFormLabel{
     font-size:1.3em;
@@ -326,7 +328,7 @@
   <div class="line lineL1">
     <span id="equationTextL1" class="eqTextL1">Lade Gleichung …</span>
     <span class="eqFormLabel">|</span>
-    <input type="text" id="opInputL1" class="opInput" placeholder="+5, -3, :4, *3 …">
+    <input type="text" id="opInputL1" class="opInput">
     <button id="opCheckBtnL1" class="checkBtn">Umformung prüfen</button>
   </div>
   <div id="opFbL1" class="fb"></div>
@@ -335,7 +337,7 @@
   <div class="line">
     <span class="eqSolLeft">x</span>
     <span class="eqSign">=</span>
-    <input type="text" id="solInputL1" class="solutionInput" placeholder="Zahl">
+    <input type="text" id="solInputL1" class="solutionInput">
     <button id="solCheckBtnL1" class="checkBtn">Lösung prüfen</button>
   </div>
   <div id="solFbL1" class="fb"></div>
