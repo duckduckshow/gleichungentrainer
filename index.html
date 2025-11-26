@@ -155,19 +155,23 @@
   }
 
   /* ---------- Schöner Bruch ---------- */
-  .niceFraction {
-    display:inline-block;
-    vertical-align:middle;
-    text-align:center;
-    margin-left:6px;
-  }
-  .niceFraction .top {
-    border-bottom:1px solid #000;
-    padding:0 3px;
-  }
-  .niceFraction .bottom {
-    padding:0 3px;
-  }
+.niceFraction {
+  display: inline-block;
+  vertical-align: middle;
+  text-align: center;
+  line-height: 1.0;
+}
+
+.niceFraction .top,
+.niceFraction .bottom {
+  display: block;
+  padding: 0 4px;
+}
+
+.niceFraction .top {
+  border-bottom: 1px solid #000;
+}
+
 
   /* ---------- Level 2 Styles ---------- */
 
