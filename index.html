@@ -122,24 +122,30 @@
     font-weight:bold;
   }
 
-  .opInput{
-    width:130px;
-    padding:6px 8px;
-    font-size:1.05em;
+    /* Abstand vor dem Strich im Umformungsschritt (ca. 1 cm) */
+  .eqFormLabelSpacer {
+    margin-left: 35px;
+  }
+  
+.opInput{
+    width:80px;      /* kleiner */
+    padding:4px 6px;
+    font-size:1.1em;
     border-radius:8px;
     border:1px solid #888;
     font-family:monospace;
-  }
+}
 
-  .solutionInput{
-    flex:1;
-    max-width:200px;
-    padding:6px 8px;
-    font-size:1.05em;
+
+.solutionInput{
+    width:90px; 
+    padding:4px 6px;
+    font-size:1.1em;
     border-radius:8px;
     border:1px solid #888;
     font-family:monospace;
-  }
+}
+
 
   .eqSolLeft{
     font-family:monospace;
@@ -327,7 +333,7 @@
   <div class="rowLabel">1. Umformungsschritt</div>
   <div class="line lineL1">
     <span id="equationTextL1" class="eqTextL1">Lade Gleichung …</span>
-    <span class="eqFormLabel">|</span>
+    <span class="eqFormLabel eqFormLabelSpacer">|</span>
     <input type="text" id="opInputL1" class="opInput">
     <button id="opCheckBtnL1" class="checkBtn">Umformung prüfen</button>
   </div>
